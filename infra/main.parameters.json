@@ -18,7 +18,7 @@
       "value": "${AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME=text-embedding-3-large}"
     },
     "openAiChatDeploymentName": {
-      "value": "${AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=gpt-4}"
+      "value": "${AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=gpt-5-mini}"
     },
     "openAiApiVersion": {
       "value": "${AZURE_OPENAI_API_VERSION=2024-02-15-preview}"

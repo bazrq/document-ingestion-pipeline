@@ -8,7 +8,7 @@ This guide will help you deploy the Document QA System to Azure in minutes using
 2. **Azure subscription** with contributor access
 3. **Existing Azure OpenAI resource** with these deployments:
    - `text-embedding-3-large` (or your embedding model)
-   - `gpt-4` (or your chat model)
+   - `gpt-5-mini` (or your chat model)
 
 ## Step-by-Step Deployment
 
@@ -169,7 +169,7 @@ azd up
 
 **1. Azure OpenAI deployment not found**
 ```
-Error: Deployment 'gpt-4' not found
+Error: Deployment 'gpt-5-mini' not found
 ```
 **Solution**: Verify your deployment names match:
 ```bash

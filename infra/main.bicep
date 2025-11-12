@@ -24,7 +24,7 @@ param openAiApiKey string
 param openAiEmbeddingDeploymentName string = 'text-embedding-3-large'
 
 @description('Azure OpenAI chat deployment name')
-param openAiChatDeploymentName string = 'gpt-4'
+param openAiChatDeploymentName string = 'gpt-5-mini'
 
 @description('Azure OpenAI API version')
 param openAiApiVersion string = '2024-02-15-preview'
@@ -43,7 +43,7 @@ param maxChunksToRetrieve int = 20
 param topChunksForAnswer int = 7
 
 // Answer Generation Configuration
-@description('Temperature for GPT-4 answer generation (0.0-1.0)')
+@description('Temperature for GPT-5-mini answer generation (0.0-1.0)')
 param answerTemperature string = '0.3'
 
 @description('Maximum tokens for answer generation')

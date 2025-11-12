@@ -98,7 +98,7 @@ cat <<EOF
       "Endpoint": "https://YOUR-EXISTING-OPENAI.openai.azure.com/",
       "ApiKey": "YOUR-EXISTING-OPENAI-KEY",
       "EmbeddingDeploymentName": "text-embedding-3-large",
-      "ChatDeploymentName": "gpt-4"
+      "ChatDeploymentName": "gpt-5-mini"
     },
     "DocumentIntelligence": {
       "Endpoint": "$DOC_INTEL_ENDPOINT",

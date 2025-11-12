@@ -40,7 +40,7 @@ Before deploying:
 
 2. **Existing Azure OpenAI** resource with these deployments:
    - `text-embedding-3-large` (or your preferred embedding model)
-   - `gpt-4` (or your preferred chat model)
+   - `gpt-5-mini` (or your preferred chat model)
 
 3. **.NET 10 SDK** installed (for running Aspire)
 
@@ -95,7 +95,7 @@ After deployment, update `DocumentQA.AppHost/appsettings.Development.json`:
       "Endpoint": "https://YOUR-EXISTING-OPENAI.openai.azure.com/",
       "ApiKey": "your-openai-api-key",
       "EmbeddingDeploymentName": "text-embedding-3-large",
-      "ChatDeploymentName": "gpt-4"
+      "ChatDeploymentName": "gpt-5-mini"
     },
     "DocumentIntelligence": {
       "Endpoint": "<FROM DEPLOYMENT OUTPUT>",
@@ -173,7 +173,7 @@ curl -X POST http://localhost:7071/api/query \
          │                  │      │                  │
          │  Azure OpenAI    │      │  Doc Intelligence│
          │  - Embeddings    │      │  AI Search (S1)  │
-         │  - GPT-4         │      │                  │
+         │  - GPT-5-mini    │      │                  │
          └──────────────────┘      └──────────────────┘
 ```
 

@@ -15,7 +15,7 @@ The infrastructure provisions the following Azure resources:
 
 **Note:** Azure OpenAI is NOT provisioned by these templates. You must have an existing Azure OpenAI resource with deployments for:
 - `text-embedding-3-large` (or your specified embedding model)
-- `gpt-4` (or your specified chat model)
+- `gpt-5-mini` (or your specified chat model)
 
 ## Prerequisites
 
@@ -52,7 +52,7 @@ The infrastructure provisions the following Azure resources:
 
    # Optional: Override default deployment names if different
    azd env set AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME "text-embedding-3-large"
-   azd env set AZURE_OPENAI_CHAT_DEPLOYMENT_NAME "gpt-4"
+   azd env set AZURE_OPENAI_CHAT_DEPLOYMENT_NAME "gpt-5-mini"
 
    # Optional: Set Azure region (defaults to eastus)
    azd env set AZURE_LOCATION "eastus"
@@ -84,12 +84,12 @@ The infrastructure provisions the following Azure resources:
 |----------|---------|-------------|
 | `AZURE_LOCATION` | `eastus` | Azure region for resources |
 | `AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME` | `text-embedding-3-large` | Embedding model deployment name |
-| `AZURE_OPENAI_CHAT_DEPLOYMENT_NAME` | `gpt-4` | Chat model deployment name |
+| `AZURE_OPENAI_CHAT_DEPLOYMENT_NAME` | `gpt-5-mini` | Chat model deployment name |
 | `PROCESSING_CHUNK_SIZE` | `800` | Chunk size in characters |
 | `PROCESSING_CHUNK_OVERLAP` | `50` | Chunk overlap in characters |
 | `PROCESSING_MAX_CHUNKS_TO_RETRIEVE` | `20` | Max chunks from search |
-| `PROCESSING_TOP_CHUNKS_FOR_ANSWER` | `7` | Top chunks for GPT-4 |
-| `ANSWER_GENERATION_TEMPERATURE` | `0.3` | GPT-4 temperature (0.0-1.0) |
+| `PROCESSING_TOP_CHUNKS_FOR_ANSWER` | `7` | Top chunks for GPT-5-mini |
+| `ANSWER_GENERATION_TEMPERATURE` | `0.3` | GPT-5-mini temperature (0.0-1.0) |
 | `ANSWER_GENERATION_MAX_TOKENS` | `1500` | Max tokens in answer |
 | `ANSWER_GENERATION_MIN_CONFIDENCE` | `0.5` | Min confidence threshold |
 | `STORAGE_CONTAINER_NAME` | `documents` | Blob container name |
