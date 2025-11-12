@@ -14,6 +14,7 @@ var tables = storage.AddTables("tables");
 
 // Add Azure Functions project with all required configuration
 var functions = builder.AddProject<Projects.DocumentQA_Functions>("documentqa-functions")
+    .WithHttpEndpoint(port: 7071, name: "http")
     .WithReference(blobs)
     .WithReference(tables)
     // Azure OpenAI Configuration
@@ -60,5 +61,10 @@ var functions = builder.AddProject<Projects.DocumentQA_Functions>("documentqa-fu
         builder.Configuration["AnswerGeneration:Temperature"] ?? "0.3")
     // Functions Runtime Configuration
     .WithEnvironment("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+
+// Add React frontend with Vite dev server
+var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
+    .WithHttpEndpoint(port: 5173, env: "PORT")
+    .WithEnvironment("VITE_API_URL", functions.GetEndpoint("http"));
 
 builder.Build().Run();

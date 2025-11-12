@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## System Overview
 
-This is a **Document QA System** built with Azure Functions (.NET 10) and orchestrated using .NET Aspire. It provides RAG (Retrieval-Augmented Generation) capabilities for PDF documents:
+This is a **Document QA System** built with Azure Functions (.NET 10), React frontend, and orchestrated using .NET Aspire. It provides RAG (Retrieval-Augmented Generation) capabilities for PDF documents:
 
-1. **Upload**: Users upload PDFs via HTTP endpoint
+1. **Upload**: Users upload PDFs via React frontend (HTTP endpoint)
 2. **Process**: Blob trigger extracts text, chunks it, generates embeddings, and indexes in Azure AI Search
-3. **Query**: Users ask questions, system retrieves relevant chunks and generates answers using GPT-5-mini
+3. **Query**: Users ask questions via React frontend, system retrieves relevant chunks and generates answers using GPT-5-mini
 
-**Key Technologies**: Azure Functions (isolated worker), Azure OpenAI, Azure Document Intelligence, Azure AI Search, Azure Storage (Blob + Table), .NET Aspire
+**Key Technologies**: Azure Functions (isolated worker), React + Vite + TypeScript + Tailwind CSS, Azure OpenAI, Azure Document Intelligence, Azure AI Search, Azure Storage (Blob + Table), .NET Aspire
 
 ## Build and Run Commands
 
@@ -26,10 +26,12 @@ cd DocumentQA.AppHost
 This automatically:
 - Starts Azurite container (Blob + Table storage emulator)
 - Launches Azure Functions app with environment variables injected
+- Launches React frontend (Vite dev server on port 5173)
 - Opens Aspire Dashboard at https://localhost:17XXX
 
 **Prerequisites**:
 - .NET 10 SDK installed
+- Node.js (for npm) installed
 - Docker Desktop running
 - `DocumentQA.AppHost/appsettings.Development.json` configured with Azure credentials (see `DocumentQA.AppHost/README.md`)
 
@@ -80,12 +82,17 @@ DocumentQA.sln
 ├── DocumentQA.AppHost/           # Aspire orchestration (dev only)
 │   └── AppHost.cs               # Configuration injection
 ├── DocumentQA.ServiceDefaults/   # Shared telemetry config
-└── DocumentQA.Functions/         # Azure Functions app (main logic)
-    ├── Functions/               # HTTP and blob trigger endpoints
-    ├── Services/                # Core business logic
-    ├── Configuration/           # Config POCOs
-    ├── Models/                  # Data models
-    └── Utils/                   # Helper classes
+├── DocumentQA.Functions/         # Azure Functions app (backend API)
+│   ├── Functions/               # HTTP and blob trigger endpoints
+│   ├── Services/                # Core business logic
+│   ├── Configuration/           # Config POCOs
+│   ├── Models/                  # Data models
+│   └── Utils/                   # Helper classes
+└── frontend/                     # React frontend (Vite + TypeScript)
+    ├── src/                     # React components and application code
+    ├── public/                  # Static assets
+    ├── vite.config.ts           # Vite configuration
+    └── package.json             # npm dependencies
 ```
 
 ### Core Components
@@ -256,14 +263,59 @@ az storage entity query --table-name documentstatus --connection-string "UseDeve
 ## File References
 
 - **Main orchestration**: `DocumentQA.AppHost/AppHost.cs`
-- **DI configuration**: `DocumentQA.Functions/Program.cs:10-106`
+- **DI configuration**: `DocumentQA.Functions/Program.cs:10-122`
 - **Processing pipeline**: `DocumentQA.Functions/Functions/ProcessingFunction.cs:28-111`
 - **Query pipeline**: `DocumentQA.Functions/Services/QueryService.cs`
 - **Chunking logic**: `DocumentQA.Functions/Utils/ChunkingStrategy.cs`
 - **Config schema**: `DocumentQA.Functions/Configuration/AzureConfig.cs`
+- **Frontend config**: `frontend/src/config.ts`
+- **Frontend Vite config**: `frontend/vite.config.ts`
+- **CORS configuration**: `DocumentQA.Functions/host.json:17-27`
 
 ## Additional Documentation
 
 - `DocumentQA.AppHost/README.md`: Detailed Aspire setup instructions
 - `docs/ASPIRE_SETUP.md`: Comprehensive Aspire integration guide
+- `docs/plans/2025-11-13-aspire-frontend-integration-design.md`: Frontend Aspire integration design
 - Function-level comments explain business logic throughout codebase
+
+## Frontend Development
+
+### API Configuration
+
+The frontend uses a centralized API URL configuration in `frontend/src/config.ts`:
+
+```typescript
+import { API_URL } from './config'
+
+// Example: Upload document
+const response = await fetch(`${API_URL}/api/upload`, {
+  method: 'POST',
+  body: formData,
+})
+```
+
+The `VITE_API_URL` environment variable is automatically injected by Aspire and points to the Functions endpoint.
+
+### CORS
+
+CORS is configured in two places for local development:
+1. `DocumentQA.Functions/Program.cs:91-105` - ASP.NET Core middleware
+2. `DocumentQA.Functions/host.json:17-27` - Azure Functions runtime
+
+Allowed origins: `http://localhost:5173`, `http://localhost:5174`, `http://127.0.0.1:5173`
+
+### Running Frontend Standalone
+
+If needed, you can run the frontend independently:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Note: You'll need to ensure the Functions app is running separately for API calls to work.
+
+## Context Priming
+Read README.md, docs/* and run tree to understand the codebase.
