@@ -1,16 +1,17 @@
-# Minimal Infrastructure for Local Aspire Development
+# Infrastructure for Local Aspire Development
 
-This directory contains a **minimal Bicep template** designed specifically for local development with .NET Aspire. It deploys only the Azure services that cannot be emulated locally.
+This directory contains a **Bicep template** designed specifically for local development with .NET Aspire. It deploys Azure services needed for local development.
 
 ## What Gets Deployed
 
 **Azure Services:**
 - **Azure Document Intelligence** (F0 - Free tier) - For PDF text extraction
 - **Azure AI Search** (Standard S1) - For vector search
+- **Azure Storage Account** (Standard_LRS) - For blob and table storage
 
 **Local Services (via Aspire):**
-- **Azurite** - Local Azure Storage emulator (Blob + Table)
 - **Azure Functions** - Runs locally with injected configuration
+- **React Frontend** - Vite dev server with automatic configuration
 
 **Not Deployed (You Must Have):**
 - **Azure OpenAI** - You need an existing Azure OpenAI resource with deployed models
@@ -21,7 +22,8 @@ This directory contains a **minimal Bicep template** designed specifically for l
 |---------|------|--------------|
 | Document Intelligence | F0 (Free) | **$0** (500 pages/month limit) |
 | AI Search | Standard S1 | **~$250** |
-| **TOTAL** | | **~$250/month** |
+| Storage Account | Standard_LRS | **~$1-5** (based on usage) |
+| **TOTAL** | | **~$251-255/month** |
 
 **Cost-Saving Tip:** Delete the resource group when not actively developing:
 ```bash
@@ -44,7 +46,9 @@ Before deploying:
 
 3. **.NET 10 SDK** installed (for running Aspire)
 
-4. **Docker Desktop** running (for Azurite container)
+4. **Docker Desktop** running (for Aspire Dashboard)
+
+5. **Node.js** installed (for React frontend)
 
 ## Deployment Steps
 
@@ -126,9 +130,10 @@ dotnet run
 ```
 
 Aspire will:
-1. Start Azurite container for local Blob + Table storage
-2. Launch Azure Functions with all environment variables injected
-3. Open Aspire Dashboard at `https://localhost:17XXX`
+1. Launch Azure Functions with all environment variables injected
+2. Launch React frontend (Vite dev server on port 5173)
+3. Connect to Azure Storage and other Azure services
+4. Open Aspire Dashboard at `https://localhost:17XXX`
 
 ### Testing the Endpoints
 
@@ -154,27 +159,29 @@ curl -X POST http://localhost:7071/api/query \
 │  ┌──────────────────────────────────────────┐  │
 │  │        .NET Aspire (AppHost)             │  │
 │  │                                          │  │
-│  │  ┌────────────┐      ┌───────────────┐  │  │
-│  │  │  Azurite   │      │ Azure Funcs   │  │  │
-│  │  │  (Docker)  │◄─────┤   (Local)     │  │  │
-│  │  └────────────┘      └───────┬───────┘  │  │
-│  └──────────────────────────────┼──────────┘  │
-│                                 │              │
-└─────────────────────────────────┼──────────────┘
-                                  │
-                                  │ HTTPS
-                                  │
-                    ┌─────────────┴─────────────┐
-                    │                           │
-                    ▼                           ▼
-         ┌──────────────────┐      ┌──────────────────┐
-         │  AZURE SERVICES  │      │  AZURE SERVICES  │
-         │  (Your Existing) │      │   (Deployed)     │
-         │                  │      │                  │
-         │  Azure OpenAI    │      │  Doc Intelligence│
-         │  - Embeddings    │      │  AI Search (S1)  │
-         │  - GPT-5-mini    │      │                  │
-         └──────────────────┘      └──────────────────┘
+│  │  ┌─────────────┐     ┌──────────────┐   │  │
+│  │  │ Azure Funcs │     │React Frontend│   │  │
+│  │  │   (Local)   │     │    (Local)   │   │  │
+│  │  └──────┬──────┘     └──────────────┘   │  │
+│  └─────────┼─────────────────────────────┘  │  │
+│            │                                 │
+└────────────┼─────────────────────────────────┘
+             │
+             │ HTTPS
+             │
+             ▼
+┌────────────────────────────────────────────────┐
+│              AZURE SERVICES                    │
+│                                                │
+│  ┌──────────────┐  ┌────────────────────┐    │
+│  │  Your        │  │  Deployed by       │    │
+│  │  Existing    │  │  local-dev.bicep   │    │
+│  │              │  │                    │    │
+│  │ Azure OpenAI │  │ Doc Intelligence   │    │
+│  │ - Embeddings │  │ AI Search (S1)     │    │
+│  │ - GPT-5-mini │  │ Storage (LRS)      │    │
+│  └──────────────┘  └────────────────────┘    │
+└────────────────────────────────────────────────┘
 ```
 
 ## Customization
@@ -235,29 +242,33 @@ Edit `infra/main.local-dev.parameters.json`:
 - Consider using different deployment names
 
 ### "Connection string not found"
-- Ensure Aspire is running (it injects storage connection string)
+- Ensure storage connection string is in `appsettings.Development.json`
+- Run `infra/deploy-local-dev.sh` if storage hasn't been deployed
 - Check Aspire Dashboard → Environment Variables
 
-## Viewing Local Storage
+## Viewing Azure Storage
 
-Aspire uses Azurite for local storage. To browse:
+Your development data is stored in Azure Storage. To browse:
 
 ### Option 1: Azure Storage Explorer
 1. Install [Azure Storage Explorer](https://azure.microsoft.com/features/storage-explorer/)
-2. Connect to "Local Storage Emulator (Azurite)"
+2. Connect using the storage connection string from your deployment
 3. Browse `documents` container and `documentstatus` table
 
 ### Option 2: Azure CLI
 ```bash
+# Get connection string from appsettings.Development.json or deployment output
+STORAGE_CONNECTION_STRING="<your-connection-string>"
+
 # List blobs
 az storage blob list \
   --container-name documents \
-  --connection-string "UseDevelopmentStorage=true"
+  --connection-string "$STORAGE_CONNECTION_STRING"
 
 # Query table
 az storage entity query \
   --table-name documentstatus \
-  --connection-string "UseDevelopmentStorage=true"
+  --connection-string "$STORAGE_CONNECTION_STRING"
 ```
 
 ## Cleanup
@@ -269,32 +280,22 @@ RESOURCE_GROUP=$(az deployment sub show \
   --name local-dev-deployment \
   --query properties.outputs.AZURE_RESOURCE_GROUP.value -o tsv)
 
-# Delete everything
+# Delete everything (including Storage Account and all data)
 az group delete --name $RESOURCE_GROUP --yes
 ```
 
-### Clear Local Storage
-```bash
-# Stop Aspire (Ctrl+C in terminal)
-
-# Remove Azurite Docker container
-docker ps -a | grep azurite
-docker rm -f <container-id>
-
-# Clear Azurite data volume (if needed)
-docker volume ls | grep azurite
-docker volume rm <volume-name>
-```
+**Note**: This will permanently delete all data in your Azure Storage account including uploaded documents and processing status records.
 
 ## Differences from Full Deployment
 
 | Component | Full Deployment (`main.bicep`) | Local Dev (`main.local-dev.bicep`) |
 |-----------|--------------------------------|-------------------------------------|
-| Storage Account | Azure Storage | Azurite (local emulator) |
-| Azure Functions | Deployed to Azure | Runs locally |
-| Application Insights | Azure resource | Local telemetry via Aspire |
-| Document Intelligence | Azure | Azure (can't be emulated) |
-| AI Search | Azure | Azure (can't be emulated) |
+| Storage Account | Azure Storage (production-grade) | Azure Storage (Standard_LRS) |
+| Azure Functions | Deployed to Azure Functions service | Runs locally via Aspire |
+| React Frontend | Deployed to Azure Static Web Apps | Runs locally via Vite dev server |
+| Application Insights | Azure resource | Local telemetry via Aspire Dashboard |
+| Document Intelligence | Azure (F0 or S0) | Azure (F0 free tier default) |
+| AI Search | Azure (Standard S1) | Azure (Standard S1) |
 | Azure OpenAI | Existing (assumed) | Existing (assumed) |
 
 ## Next Steps

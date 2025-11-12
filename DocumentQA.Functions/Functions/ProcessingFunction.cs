@@ -27,7 +27,7 @@ public class ProcessingFunction
 
     [Function("ProcessDocument")]
     public async Task Run(
-        [BlobTrigger("documents/{documentId}/{fileName}", Connection = "Azure__Storage__ConnectionString")]
+        [BlobTrigger("documents/{documentId}/{fileName}", Connection = "")]
         Stream blobStream,
         string documentId,
         string fileName)
