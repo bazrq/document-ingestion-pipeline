@@ -1,0 +1,32 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+
+        "Azure__OpenAI__Endpoint": "https://your-openai-resource.openai.azure.com/",
+        "Azure__OpenAI__ApiKey": "your-api-key-here",
+        "Azure__OpenAI__EmbeddingDeploymentName": "text-embedding-3-large",
+        "Azure__OpenAI__ChatDeploymentName": "gpt-4",
+
+        "Azure__DocumentIntelligence__Endpoint": "https://your-document-intelligence.cognitiveservices.azure.com/",
+        "Azure__DocumentIntelligence__ApiKey": "your-api-key-here",
+
+        "Azure__AISearch__Endpoint": "https://your-search-service.search.windows.net",
+        "Azure__AISearch__AdminKey": "your-admin-key-here",
+        "Azure__AISearch__IndexName": "document-chunks",
+
+        "Azure__Storage__ConnectionString": "DefaultEndpointsProtocol=https;AccountName=your-storage;AccountKey=your-key;EndpointSuffix=core.windows.net",
+        "Azure__Storage__ContainerName": "documents",
+        "Azure__Storage__TableName": "documentstatus",
+
+        "Processing__ChunkSize": "800",
+        "Processing__ChunkOverlap": "50",
+        "Processing__MaxChunksToRetrieve": "20",
+        "Processing__TopChunksForAnswer": "7",
+
+        "AnswerGeneration__MinimumConfidenceThreshold": "0.5",
+        "AnswerGeneration__MaxTokens": "1500",
+        "AnswerGeneration__Temperature": "0.3"
+    }
+}
