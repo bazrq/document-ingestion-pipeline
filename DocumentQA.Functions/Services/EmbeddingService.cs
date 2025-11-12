@@ -1,6 +1,7 @@
 using Azure;
 using Azure.AI.OpenAI;
 using DocumentQA.Functions.Configuration;
+using DocumentQA.Functions.Utils;
 using OpenAI.Embeddings;
 
 namespace DocumentQA.Functions.Services;
@@ -13,9 +14,14 @@ public class EmbeddingService
 
     public EmbeddingService(OpenAIConfig config)
     {
+        // Create client options with the configured API version
+        // Falls back to the latest stable version if the configured version is not supported
+        var clientOptions = AzureOpenAIClientOptionsFactory.CreateWithFallback(config.ApiVersion);
+
         _client = new AzureOpenAIClient(
             new Uri(config.Endpoint),
-            new AzureKeyCredential(config.ApiKey));
+            new AzureKeyCredential(config.ApiKey),
+            clientOptions);
 
         _deploymentName = config.EmbeddingDeploymentName;
         _embeddingClient = _client.GetEmbeddingClient(_deploymentName);

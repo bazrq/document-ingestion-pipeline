@@ -23,6 +23,8 @@ var functions = builder.AddProject<Projects.DocumentQA_Functions>("documentqa-fu
         builder.Configuration["Azure:OpenAI:EmbeddingDeploymentName"] ?? "text-embedding-3-large")
     .WithEnvironment("Azure__OpenAI__ChatDeploymentName",
         builder.Configuration["Azure:OpenAI:ChatDeploymentName"] ?? "gpt-5-mini")
+    .WithEnvironment("Azure__OpenAI__ApiVersion",
+        builder.Configuration["Azure:OpenAI:ApiVersion"] ?? "2024-12-01-preview")
     // Azure Document Intelligence Configuration
     .WithEnvironment("Azure__DocumentIntelligence__Endpoint",
         builder.Configuration["Azure:DocumentIntelligence:Endpoint"] ?? "")

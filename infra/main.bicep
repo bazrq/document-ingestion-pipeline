@@ -27,7 +27,7 @@ param openAiEmbeddingDeploymentName string = 'text-embedding-3-large'
 param openAiChatDeploymentName string = 'gpt-5-mini'
 
 @description('Azure OpenAI API version')
-param openAiApiVersion string = '2024-02-15-preview'
+param openAiApiVersion string = '2024-12-01-preview'
 
 // Processing Configuration
 @description('Chunk size in characters for document processing')

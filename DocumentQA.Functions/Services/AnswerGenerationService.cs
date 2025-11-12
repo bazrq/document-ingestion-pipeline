@@ -15,9 +15,14 @@ public class AnswerGenerationService
 
     public AnswerGenerationService(OpenAIConfig openAIConfig, AnswerGenerationConfig config)
     {
+        // Create client options with the configured API version
+        // Falls back to the latest stable version if the configured version is not supported
+        var clientOptions = AzureOpenAIClientOptionsFactory.CreateWithFallback(openAIConfig.ApiVersion);
+
         _client = new AzureOpenAIClient(
             new Uri(openAIConfig.Endpoint),
-            new AzureKeyCredential(openAIConfig.ApiKey));
+            new AzureKeyCredential(openAIConfig.ApiKey),
+            clientOptions);
 
         _chatClient = _client.GetChatClient(openAIConfig.ChatDeploymentName);
         _config = config;
