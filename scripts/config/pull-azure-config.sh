@@ -27,7 +27,9 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 # Default configuration
 CREATE_BACKUP=true
 OPENAI_ONLY=true
+UPDATE_FUNCTIONS=false
 OUTPUT_FILE="${REPO_ROOT}/DocumentQA.AppHost/appsettings.Development.json"
+FUNCTIONS_FILE="${REPO_ROOT}/DocumentQA.Functions/local.settings.json"
 
 # Source library modules
 # shellcheck source=./lib/validation.sh
@@ -54,13 +56,17 @@ USAGE:
 OPTIONS:
     -h, --help              Show this help message
     --openai-only           Only configure Azure OpenAI (default)
+    --update-functions      Also update DocumentQA.Functions/local.settings.json
     --no-backup             Skip creating backup of existing config
     --output FILE           Specify output file path
                             (default: DocumentQA.AppHost/appsettings.Development.json)
 
 EXAMPLES:
-    # Interactive configuration with defaults
+    # Interactive configuration with defaults (Aspire only)
     ./pull-azure-config.sh
+
+    # Update both Aspire and Functions configuration
+    ./pull-azure-config.sh --update-functions
 
     # Configure without creating backup
     ./pull-azure-config.sh --no-backup
@@ -94,6 +100,10 @@ parse_args() {
                 ;;
             --openai-only)
                 OPENAI_ONLY=true
+                shift
+                ;;
+            --update-functions)
+                UPDATE_FUNCTIONS=true
                 shift
                 ;;
             --no-backup)
@@ -215,13 +225,38 @@ configure_azure_openai() {
     local embedding_deployment
     embedding_deployment=$(echo "$openai_config" | jq -r '.embeddingDeployment')
 
+    # Update Aspire appsettings.Development.json
     if update_appsettings_openai "$output_file" "$endpoint" "$api_key" "$embedding_deployment" "$chat_deployment"; then
-        print_success "Configuration applied successfully!"
-        return 0
+        print_success "Updated Aspire configuration: $output_file"
     else
-        print_error "Failed to apply configuration"
+        print_error "Failed to apply configuration to $output_file"
         return 1
     fi
+
+    # Also update Functions local.settings.json if requested
+    if [ "$UPDATE_FUNCTIONS" = true ]; then
+        echo ""
+        print_info "Also updating Functions configuration..."
+
+        # Create backup of local.settings.json if requested
+        if [ "$CREATE_BACKUP" = true ]; then
+            if ! create_backup "$FUNCTIONS_FILE"; then
+                if ! confirm "Backup of $FUNCTIONS_FILE failed. Continue anyway?" "n"; then
+                    return 1
+                fi
+            fi
+        fi
+
+        if update_local_settings_openai "$FUNCTIONS_FILE" "$endpoint" "$api_key" "$embedding_deployment" "$chat_deployment"; then
+            print_success "Updated Functions configuration: $FUNCTIONS_FILE"
+        else
+            print_warning "Failed to update Functions configuration (Aspire config was still updated)"
+        fi
+    fi
+
+    echo ""
+    print_success "Configuration applied successfully!"
+    return 0
 }
 
 # Display next steps
@@ -232,16 +267,23 @@ show_next_steps() {
     echo ""
     echo "1. Review the configuration:"
     echo "   ${COLOR_BLUE}cat $OUTPUT_FILE${COLOR_RESET}"
+    if [ "$UPDATE_FUNCTIONS" = true ]; then
+        echo "   ${COLOR_BLUE}cat $FUNCTIONS_FILE${COLOR_RESET}"
+    fi
     echo ""
-    echo "2. Start the application with Aspire:"
-    echo "   ${COLOR_BLUE}cd DocumentQA.AppHost && dotnet run${COLOR_RESET}"
+
+    if [ "$UPDATE_FUNCTIONS" = true ]; then
+        echo "2. Start the application:"
+        echo "   With Aspire: ${COLOR_BLUE}cd DocumentQA.AppHost && dotnet run${COLOR_RESET}"
+        echo "   Or standalone Functions: ${COLOR_BLUE}cd DocumentQA.Functions && func start${COLOR_RESET}"
+    else
+        echo "2. Start the application with Aspire:"
+        echo "   ${COLOR_BLUE}cd DocumentQA.AppHost && dotnet run${COLOR_RESET}"
+    fi
     echo ""
-    echo "3. Or use the helper script:"
-    echo "   ${COLOR_BLUE}./scripts/local/aspire/run-application.sh${COLOR_RESET}"
+    echo "3. Access the Aspire Dashboard when prompted (if using Aspire)"
     echo ""
-    echo "4. Access the Aspire Dashboard when prompted"
-    echo ""
-    echo "5. Test the APIs:"
+    echo "4. Test the APIs:"
     echo "   Upload:  ${COLOR_BLUE}POST http://localhost:7071/api/upload${COLOR_RESET}"
     echo "   Query:   ${COLOR_BLUE}POST http://localhost:7071/api/query${COLOR_RESET}"
     echo ""

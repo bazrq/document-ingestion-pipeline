@@ -13,8 +13,9 @@ echo ""
 echo "This will deploy:"
 echo "  - Azure Document Intelligence (F0 - FREE tier)"
 echo "  - Azure AI Search (Standard S1 - ~\$250/month)"
+echo "  - Azure Storage Account (Standard_LRS - ~\$1-5/month)"
 echo ""
-echo "Total estimated cost: ~\$250/month"
+echo "Total estimated cost: ~\$251-255/month"
 echo ""
 echo "Prerequisites:"
 echo "  - Azure CLI installed and logged in (az login)"
@@ -62,6 +63,10 @@ DOC_INTEL_KEY=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query propert
 SEARCH_ENDPOINT=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query properties.outputs.AZURE_AI_SEARCH_ENDPOINT.value -o tsv)
 SEARCH_KEY=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query properties.outputs.AZURE_AI_SEARCH_ADMIN_KEY.value -o tsv)
 SEARCH_INDEX=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query properties.outputs.AZURE_AI_SEARCH_INDEX_NAME.value -o tsv)
+STORAGE_ACCOUNT=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query properties.outputs.AZURE_STORAGE_ACCOUNT_NAME.value -o tsv)
+STORAGE_CONNECTION=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query properties.outputs.AZURE_STORAGE_CONNECTION_STRING.value -o tsv)
+STORAGE_CONTAINER=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query properties.outputs.AZURE_STORAGE_CONTAINER_NAME.value -o tsv)
+STORAGE_TABLE=$(az deployment sub show --name "$DEPLOYMENT_NAME" --query properties.outputs.AZURE_STORAGE_TABLE_NAME.value -o tsv)
 
 echo ""
 echo "=================================================="
@@ -78,6 +83,12 @@ echo "AI Search:"
 echo "  Endpoint: $SEARCH_ENDPOINT"
 echo "  Admin Key: ${SEARCH_KEY:0:10}..."
 echo "  Index Name: $SEARCH_INDEX"
+echo ""
+echo "Storage Account:"
+echo "  Account Name: $STORAGE_ACCOUNT"
+echo "  Connection String: ${STORAGE_CONNECTION:0:50}..."
+echo "  Container Name: $STORAGE_CONTAINER"
+echo "  Table Name: $STORAGE_TABLE"
 echo ""
 echo "=================================================="
 echo "NEXT STEPS"
@@ -108,6 +119,9 @@ cat <<EOF
       "Endpoint": "$SEARCH_ENDPOINT",
       "AdminKey": "$SEARCH_KEY",
       "IndexName": "$SEARCH_INDEX"
+    },
+    "Storage": {
+      "ConnectionString": "$STORAGE_CONNECTION"
     }
   }
 }
@@ -117,7 +131,10 @@ echo "2. Start the Aspire stack:"
 echo "   cd DocumentQA.AppHost"
 echo "   dotnet run"
 echo ""
-echo "3. Aspire will automatically handle local storage with Azurite"
+echo "3. Aspire will automatically:"
+echo "   - Inject all configuration into Azure Functions"
+echo "   - Initialize the blob container and table storage"
+echo "   - Open the Aspire Dashboard"
 echo ""
 echo "=================================================="
 echo "COST MANAGEMENT"

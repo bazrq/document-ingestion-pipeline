@@ -5,10 +5,10 @@ This document explains how to run the Document QA system using .NET Aspire orche
 ## What is Aspire?
 
 .NET Aspire is a cloud-ready stack for building observable, production-ready distributed applications. It provides:
-- Orchestration of multiple services (Azure Functions, Azurite, etc.)
+- Orchestration of multiple services (Azure Functions, React frontend, etc.)
 - Automatic service discovery and configuration injection
 - Built-in observability (logs, traces, metrics) via a dashboard
-- Local development containers (Azurite for Azure Storage)
+- Centralized configuration management
 
 ## Project Structure
 
@@ -34,18 +34,25 @@ Before running with Aspire, ensure you have:
    # Should show 10.0.x
    ```
 
-2. **Docker Desktop** running (for Azurite container)
+2. **Docker Desktop** running (for Aspire Dashboard)
    ```bash
    docker ps
    # Should show running containers
    ```
 
-3. **Azure Resources** configured:
+3. **Azure CLI** installed
+   ```bash
+   az --version
+   # For deploying local-dev infrastructure
+   ```
+
+4. **Azure Resources** deployed via `infra/main.local-dev.bicep`:
    - Azure OpenAI (with `text-embedding-3-large` and `gpt-5-mini` deployments)
    - Azure Document Intelligence
    - Azure AI Search (Standard tier S1 for vector search)
+   - Azure Storage Account (Standard_LRS)
 
-4. **(Optional) Azure Functions Core Tools** for full functionality
+5. **(Optional) Azure Functions Core Tools** for full functionality
    ```bash
    npm install -g azure-functions-core-tools@4
    ```
@@ -80,12 +87,17 @@ Create a new file `DocumentQA.AppHost/appsettings.Development.json` with your Az
       "Endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net/",
       "AdminKey": "YOUR-ADMIN-KEY",
       "IndexName": "document-chunks"
+    },
+    "Storage": {
+      "ConnectionString": "YOUR-STORAGE-CONNECTION-STRING"
     }
   }
 }
 ```
 
 **Important**: This file is automatically gitignored and will never be committed.
+
+**Note**: Deploy infrastructure first using `infra/deploy-local-dev.sh` to get the Azure resource endpoints and keys.
 
 ### Step 2: Verify Configuration
 
@@ -110,15 +122,16 @@ cd DocumentQA.AppHost
 ```
 
 This single command will:
-1. Start Azurite container (Azure Storage emulator)
-2. Launch the Azure Functions app
-3. Inject all environment variables automatically
-4. Open the Aspire Dashboard in your browser
+1. Launch the Azure Functions app
+2. Launch the React frontend (Vite dev server)
+3. Inject all environment variables from appsettings.Development.json
+4. Connect to Azure Storage and other Azure services
+5. Open the Aspire Dashboard in your browser
 
 ### What You'll See
 
 The Aspire Dashboard will show:
-- **Resources**: Status of Azurite and Functions app
+- **Resources**: Status of Functions app and Frontend
 - **Console**: Live logs from both services
 - **Traces**: Distributed tracing across Azure service calls
 - **Metrics**: Performance metrics (request rates, latencies)
@@ -152,13 +165,13 @@ curl -X POST http://localhost:7071/api/query \
 
 ## What Aspire Does for You
 
-### 1. Automatic Storage Configuration
+### 1. Azure Storage Integration
 
-Aspire starts Azurite and automatically:
-- Creates blob storage on port 10000
-- Creates table storage on port 10001
-- Injects connection strings into the Functions app
-- Persists data in Docker volume (survives restarts)
+Aspire connects to your deployed Azure Storage and automatically:
+- Injects the storage connection string from appsettings.Development.json
+- Configures blob container name (default: "documents")
+- Configures table name (default: "documentstatus")
+- Initializes containers and tables on startup if they don't exist
 
 ### 2. Environment Variable Injection
 
@@ -191,21 +204,21 @@ The Aspire Dashboard provides:
 ### Without Aspire (Manual Approach)
 
 ```bash
-# Terminal 1: Start Azurite manually
-azurite-blob --location ./azurite-data
-
-# Terminal 2: Start Azurite tables
-azurite-table --location ./azurite-data
-
-# Terminal 3: Set environment variables and run Functions
+# Terminal 1: Set environment variables and run Functions
 cd DocumentQA.Functions
 export Azure__OpenAI__Endpoint="..."
 export Azure__OpenAI__ApiKey="..."
 export Azure__DocumentIntelligence__Endpoint="..."
-# ... 27 more environment variables ...
+export Azure__AISearch__Endpoint="..."
+export Azure__Storage__ConnectionString="..."
+# ... 30+ more environment variables ...
 func start
 
-# No unified logs, no tracing, manual service management
+# Terminal 2: Start React frontend
+cd frontend
+npm run dev
+
+# No unified logs, no tracing, manual service management, managing multiple terminals
 ```
 
 ### With Aspire
@@ -237,15 +250,15 @@ lsof -ti:7071 | xargs kill -9
 
 ### "Configuration value not found" errors
 
-**Solution**: Verify `appsettings.Development.json` exists with all required Azure credentials.
+**Solution**: Verify `appsettings.Development.json` exists with all required Azure credentials including Storage connection string.
 
-### Azurite connection errors
+### Azure Storage connection errors
 
-**Solution**: Azurite uses default ports. Check Docker logs in Aspire Dashboard.
-
-```bash
-docker logs $(docker ps -q --filter ancestor=mcr.microsoft.com/azure-storage/azurite)
-```
+**Solution**:
+1. Verify storage connection string in `appsettings.Development.json` is correct
+2. Run `infra/deploy-local-dev.sh` to deploy Azure Storage if not already done
+3. Check Azure Portal to ensure Storage Account exists and is accessible
+4. Verify storage account firewall rules allow access from your IP
 
 ### Functions app won't start
 
@@ -309,8 +322,8 @@ Override processing defaults in your `appsettings.Development.json`:
 **Important**: Aspire is for **local development orchestration only**.
 
 For production:
-1. Deploy Functions to Azure Functions service
-2. Use Azure Storage (not Azurite)
+1. Deploy Functions to Azure Functions service using `azd up`
+2. Use production-grade Azure Storage
 3. Configure via Azure Function App Settings
 4. Enable Application Insights for monitoring
 5. Use Azure Key Vault for secrets
@@ -320,7 +333,7 @@ Aspire is **not** a production hosting platform - it's a development tool.
 ## Benefits of Using Aspire
 
 1. **Faster Onboarding**: New developers run one command to start the entire stack
-2. **Consistent Environments**: Everyone uses the same Azurite version and configuration
+2. **Consistent Environments**: Everyone uses the same Azure resources for local development
 3. **Better Debugging**: Unified dashboard shows logs and traces across all services
 4. **Simplified Configuration**: 30+ environment variables managed in one file
 5. **Productivity**: No manual service orchestration, no terminal juggling
@@ -336,4 +349,4 @@ Aspire is **not** a production hosting platform - it's a development tool.
 
 - [.NET Aspire Documentation](https://learn.microsoft.com/en-us/dotnet/aspire/)
 - [Azure Functions Documentation](https://learn.microsoft.com/en-us/azure/azure-functions/)
-- [Azurite Documentation](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite)
+- [Azure Storage Documentation](https://learn.microsoft.com/en-us/azure/storage/)

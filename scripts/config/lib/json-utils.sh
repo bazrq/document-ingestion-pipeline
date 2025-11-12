@@ -165,6 +165,56 @@ update_appsettings_openai() {
     fi
 }
 
+# Update local.settings.json with Azure OpenAI configuration (Functions format)
+# Usage: update_local_settings_openai "local.settings.json" "endpoint" "api_key" "embedding_model" "chat_model"
+update_local_settings_openai() {
+    local file_path="$1"
+    local endpoint="$2"
+    local api_key="$3"
+    local embedding_deployment="$4"
+    local chat_deployment="$5"
+
+    print_info "Updating Azure OpenAI configuration in $file_path..."
+
+    # Validate inputs
+    if ! validate_url "$endpoint"; then
+        return 1
+    fi
+
+    if [ -z "$api_key" ]; then
+        print_error "API key cannot be empty"
+        return 1
+    fi
+
+    if [ -z "$embedding_deployment" ]; then
+        print_error "Embedding deployment name cannot be empty"
+        return 1
+    fi
+
+    if [ -z "$chat_deployment" ]; then
+        print_error "Chat deployment name cannot be empty"
+        return 1
+    fi
+
+    # Ensure endpoint has trailing slash
+    if [[ ! "$endpoint" =~ /$ ]]; then
+        endpoint="${endpoint}/"
+    fi
+
+    # Update all Azure OpenAI values atomically (flat format with double underscores)
+    if json_update_multiple "$file_path" \
+        '.Values["Azure__OpenAI__Endpoint"]:'"$endpoint" \
+        '.Values["Azure__OpenAI__ApiKey"]:'"$api_key" \
+        '.Values["Azure__OpenAI__EmbeddingDeploymentName"]:'"$embedding_deployment" \
+        '.Values["Azure__OpenAI__ChatDeploymentName"]:'"$chat_deployment"; then
+        print_success "Configuration updated successfully"
+        return 0
+    else
+        print_error "Failed to update configuration"
+        return 1
+    fi
+}
+
 # Check if a JSON path exists in a file
 # Usage: if json_path_exists "file.json" ".Azure.OpenAI"; then ...
 json_path_exists() {

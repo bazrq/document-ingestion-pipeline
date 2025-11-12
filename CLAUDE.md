@@ -24,8 +24,8 @@ cd DocumentQA.AppHost
 ```
 
 This automatically:
-- Starts Azurite container (Blob + Table storage emulator)
 - Launches Azure Functions app with environment variables injected
+- Connects to Azure Storage (deployed via infra/main.local-dev.bicep)
 - Launches React frontend (Vite dev server on port 5173)
 - Opens Aspire Dashboard at https://localhost:17XXX
 
@@ -152,7 +152,7 @@ All config is environment-variable based. Key settings:
 - `Azure__DocumentIntelligence__Endpoint`, `Azure__DocumentIntelligence__ApiKey`
 - `Azure__AISearch__Endpoint`, `Azure__AISearch__AdminKey`
 - `Azure__AISearch__IndexName` (default: "document-chunks")
-- `Azure__Storage__ConnectionString` (auto-injected by Aspire for Azurite)
+- `Azure__Storage__ConnectionString` (from Azure Storage account deployed via infra/main.local-dev.bicep)
 
 **Processing Params** (optional):
 - `Processing__ChunkSize` (default: 800 tokens)
@@ -250,15 +250,20 @@ curl -X POST http://localhost:7071/api/query \
 
 ### Viewing Storage Contents
 
-Azurite storage persists in Docker volume. Use Azure Storage Explorer or:
+Azure Storage is persistent and accessible via Azure Storage Explorer or Azure CLI:
 
 ```bash
+# Get connection string from appsettings.Development.json or bicep output
+STORAGE_CONNECTION_STRING="<your-connection-string>"
+
 # List blobs (requires azure-cli)
-az storage blob list --container-name documents --connection-string "UseDevelopmentStorage=true"
+az storage blob list --container-name documents --connection-string "$STORAGE_CONNECTION_STRING"
 
 # Query table
-az storage entity query --table-name documentstatus --connection-string "UseDevelopmentStorage=true"
+az storage entity query --table-name documentstatus --connection-string "$STORAGE_CONNECTION_STRING"
 ```
+
+Alternatively, use [Azure Storage Explorer](https://azure.microsoft.com/features/storage-explorer/) to browse blobs and tables with a GUI.
 
 ## File References
 

@@ -32,12 +32,19 @@ param searchSku string = 'standard'
 ])
 param documentIntelligenceSku string = 'F0'
 
+// Storage Configuration
+@description('Name of the blob storage container for documents')
+param documentsContainerName string = 'documents'
+
+@description('Name of the table storage for document status tracking')
+param documentStatusTableName string = 'documentstatus'
+
 // Variables
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = {
-  'environment': environmentName
-  'purpose': 'local-aspire-development'
+  environment: environmentName
+  purpose: 'local-aspire-development'
 }
 
 // Resource Group
@@ -71,6 +78,19 @@ module search './modules/search.bicep' = {
   }
 }
 
+// Storage - For document storage and status tracking
+module storage './modules/storage.bicep' = {
+  name: 'storage'
+  scope: rg
+  params: {
+    name: '${abbrs.storageStorageAccounts}${resourceToken}'
+    location: location
+    tags: tags
+    documentsContainerName: documentsContainerName
+    documentStatusTableName: documentStatusTableName
+  }
+}
+
 // Outputs - Copy these values to DocumentQA.AppHost/appsettings.Development.json
 output AZURE_LOCATION string = location
 output AZURE_RESOURCE_GROUP string = rg.name
@@ -82,6 +102,11 @@ output AZURE_AI_SEARCH_ENDPOINT string = search.outputs.endpoint
 output AZURE_AI_SEARCH_ADMIN_KEY string = search.outputs.adminKey
 output AZURE_AI_SEARCH_NAME string = search.outputs.name
 output AZURE_AI_SEARCH_INDEX_NAME string = searchIndexName
+
+output AZURE_STORAGE_ACCOUNT_NAME string = storage.outputs.name
+output AZURE_STORAGE_CONNECTION_STRING string = storage.outputs.connectionString
+output AZURE_STORAGE_CONTAINER_NAME string = documentsContainerName
+output AZURE_STORAGE_TABLE_NAME string = documentStatusTableName
 
 // Instructions for next steps
 output INSTRUCTIONS string = '''
@@ -107,19 +132,20 @@ LOCAL ASPIRE DEVELOPMENT SETUP - NEXT STEPS
          "Endpoint": "${search.outputs.endpoint}",
          "AdminKey": "${search.outputs.adminKey}",
          "IndexName": "${searchIndexName}"
+       },
+       "Storage": {
+         "ConnectionString": "${storage.outputs.connectionString}"
        }
      }
    }
 
-2. Storage is handled locally by Aspire (Azurite) - no Azure Storage needed!
-
-3. Start the Aspire stack:
+2. Start the Aspire stack:
    cd DocumentQA.AppHost
    dotnet run
 
-4. Aspire will automatically:
-   - Start Azurite container for local Blob + Table storage
+3. Aspire will automatically:
    - Inject all configuration into Azure Functions
+   - Initialize the blob container and table storage
    - Open the Aspire Dashboard
 
 ===========================================
@@ -127,7 +153,8 @@ COST ESTIMATE (Monthly)
 ===========================================
 - Document Intelligence (F0): FREE (limited quota: 500 pages/month)
 - AI Search (Standard S1): ~$250/month
-- Total: ~$250/month
+- Storage (Standard_LRS): ~$1-5/month (based on usage)
+- Total: ~$251-255/month
 
 To reduce costs further, delete resources when not in use:
   az group delete --name ${rg.name} --yes --no-wait

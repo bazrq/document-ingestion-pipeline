@@ -5,8 +5,8 @@ This is the .NET Aspire orchestration project for the Document QA system.
 ## What it Does
 
 The AppHost orchestrates:
-1. **Azurite** - Local Azure Storage emulator (Blob + Table storage)
-2. **DocumentQA.Functions** - Azure Functions application with automatic configuration injection
+1. **DocumentQA.Functions** - Azure Functions application with automatic configuration injection
+2. **React Frontend** - Vite dev server with automatic API endpoint configuration
 
 ## Configuration
 
@@ -39,24 +39,30 @@ Create `appsettings.Development.json` (this file is gitignored) with your Azure 
       "Endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net/",
       "AdminKey": "YOUR-SEARCH-ADMIN-KEY",
       "IndexName": "document-chunks"
+    },
+    "Storage": {
+      "ConnectionString": "YOUR-STORAGE-CONNECTION-STRING"
     }
   }
 }
 ```
 
 2. **Required Azure Resources:**
+   Deploy infrastructure using `infra/deploy-local-dev.sh` to create:
    - **Azure OpenAI**: Must have deployments for text-embedding-3-large and gpt-5-mini
    - **Azure Document Intelligence**: For PDF text extraction
    - **Azure AI Search**: Standard tier (S1) for vector search support
-   - **Azurite**: Automatically started by Aspire (no setup needed)
+   - **Azure Storage Account**: Standard_LRS for blob and table storage
 
 ## Running the Application
 
 ### Prerequisites
 
 1. **.NET 10 SDK** installed
-2. **Azure Functions Core Tools** installed
-3. **Docker Desktop** running (for Azurite container)
+2. **Node.js** installed (for React frontend)
+3. **Docker Desktop** running (for Aspire Dashboard)
+4. **Azure CLI** installed (for deploying local infrastructure)
+5. **Azure infrastructure deployed** via `infra/deploy-local-dev.sh`
 
 ### Start the Stack
 
@@ -66,8 +72,9 @@ cd DocumentQA.AppHost
 ```
 
 This will:
-- Start Azurite container (Blob + Table storage on local ports)
 - Launch Azure Functions app with injected configuration
+- Launch React frontend (Vite dev server on port 5173)
+- Connect to Azure Storage and other Azure services
 - Open Aspire Dashboard
 
 ### Access Points

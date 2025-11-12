@@ -4,47 +4,109 @@ This directory contains scripts for managing Azure infrastructure configuration 
 
 ## Scripts
 
-### 1. `pull-azure-config.sh` - Interactive Configuration Discovery
+### 1. `pull-azure-config.sh` - Interactive Azure OpenAI Configuration
 
-The `pull-azure-config.sh` script provides an **interactive, extensible** way to discover Azure resources and update local configuration files. It eliminates manual copy-pasting of endpoints, API keys, and deployment names.
-
-### 2. `get-config.sh` - Retrieve Deployed Infrastructure Configuration
-
-The `get-config.sh` script retrieves configuration values from your deployed Azure resources. Use this to pull the latest configuration after infrastructure deployment or to verify current settings.
+The `pull-azure-config.sh` script provides an **interactive** way to discover Azure OpenAI resources and update local configuration files. It uses `fzf` for a user-friendly selection experience and can update both Aspire and Functions configurations.
 
 **Usage:**
 ```bash
-# Retrieve config from default resource group (rg-local-dev)
-./scripts/config/get-config.sh
+# Update Aspire configuration only (default)
+./scripts/config/pull-azure-config.sh
 
-# Retrieve config from specific resource group
-./scripts/config/get-config.sh rg-production
+# Update both Aspire and Functions configuration
+./scripts/config/pull-azure-config.sh --update-functions
+
+# Update without backup
+./scripts/config/pull-azure-config.sh --no-backup
+
+# Custom output file
+./scripts/config/pull-azure-config.sh --output /path/to/config.json
 ```
 
-**Output:**
+**Options:**
+- `--update-functions` - Also update `DocumentQA.Functions/local.settings.json`
+- `--no-backup` - Skip creating timestamped backups
+- `--output FILE` - Custom output file path
+- `--help`, `-h` - Show help message
+
+**What it configures:**
+- Azure OpenAI endpoint and API key (interactive selection)
+- Chat model deployment (interactive fzf selection)
+- Embedding model deployment (interactive fzf selection)
+- Creates timestamped backups before updating
+
+### 2. `get-config.sh` - Retrieve Deployed Infrastructure Configuration
+
+The `get-config.sh` script retrieves configuration values from your deployed Azure resources and can **automatically update** your local configuration files.
+
+**Usage:**
+```bash
+# View configuration only (default behavior)
+./scripts/config/get-config.sh
+
+# Retrieve and update Functions local.settings.json
+./scripts/config/get-config.sh --update-functions
+
+# Retrieve and update Aspire appsettings.Development.json
+./scripts/config/get-config.sh --update-aspire
+
+# Update both configuration files
+./scripts/config/get-config.sh --update-functions --update-aspire
+
+# Use with specific resource group
+./scripts/config/get-config.sh rg-production --update-functions --update-aspire
+```
+
+**Options:**
+- `[resource-group-name]` - Azure resource group name (default: `rg-local-dev`)
+- `--update-functions` - Automatically update `DocumentQA.Functions/local.settings.json`
+- `--update-aspire` - Automatically update `DocumentQA.AppHost/appsettings.Development.json`
+- `--help`, `-h` - Show help message
+
+**What it retrieves:**
 - Document Intelligence endpoint and API key
 - AI Search endpoint, admin key, and index name
-- Formatted JSON for `appsettings.Development.json`
-- Environment variable export commands
+- Storage Account connection string, container name, and table name
+
+**What it updates (when using flags):**
+- All Azure service configurations (Document Intelligence, AI Search, Storage)
+- Processing parameters (chunk size, overlap, etc.)
+- Answer generation settings (temperature, max tokens, etc.)
+- Preserves existing Azure OpenAI configuration (since OpenAI is not deployed via local-dev infrastructure)
 
 **When to use:**
 - After running `infra/deploy-local-dev.sh`
 - When you need to retrieve credentials from deployed resources
+- To automatically sync local config with deployed infrastructure
 - To verify current infrastructure configuration
 - To regenerate configuration after key rotation
 
+**Note:** Azure OpenAI configuration must still be set manually or via `pull-azure-config.sh`
+
 ## Quick Reference
 
-| Script | Purpose | Prerequisites | Interactive |
-|--------|---------|---------------|-------------|
-| `get-config.sh` | Retrieve config from deployed Azure resources | Azure CLI, jq | No |
-| `pull-azure-config.sh` | Interactive Azure OpenAI discovery and configuration | Azure CLI, jq, fzf | Yes |
+| Script | Purpose | Can Update Functions | Interactive |
+|--------|---------|----------------------|-------------|
+| `get-config.sh` | Retrieve config from deployed Azure resources (Doc Intelligence, AI Search, Storage) | Yes (`--update-functions`) | No |
+| `pull-azure-config.sh` | Discover and configure Azure OpenAI resources | Yes (`--update-functions`) | Yes (fzf) |
 
-**Typical workflow:**
+**Typical workflow (Aspire):**
 1. Deploy infrastructure: `infra/deploy-local-dev.sh`
-2. Retrieve deployed config: `./scripts/config/get-config.sh`
+2. Auto-update infrastructure config: `./scripts/config/get-config.sh --update-aspire`
 3. Configure Azure OpenAI: `./scripts/config/pull-azure-config.sh`
 4. Start Aspire: `cd DocumentQA.AppHost && dotnet run`
+
+**Alternative workflow (standalone Functions):**
+1. Deploy infrastructure: `infra/deploy-local-dev.sh`
+2. Auto-update infrastructure config: `./scripts/config/get-config.sh --update-functions`
+3. Configure Azure OpenAI: `./scripts/config/pull-azure-config.sh --update-functions`
+4. Start Functions: `cd DocumentQA.Functions && func start`
+
+**Complete setup (both Aspire and Functions):**
+1. Deploy infrastructure: `infra/deploy-local-dev.sh`
+2. Update all configs: `./scripts/config/get-config.sh --update-functions --update-aspire`
+3. Configure OpenAI for both: `./scripts/config/pull-azure-config.sh --update-functions`
+4. Start either: Aspire (`cd DocumentQA.AppHost && dotnet run`) or Functions (`cd DocumentQA.Functions && func start`)
 
 ## Overview
 
@@ -155,10 +217,16 @@ This will:
 # Show help
 ./scripts/config/pull-azure-config.sh --help
 
+# Update both Aspire and Functions configuration
+./scripts/config/pull-azure-config.sh --update-functions
+
 # Skip backup creation (use with caution)
 ./scripts/config/pull-azure-config.sh --no-backup
 
-# Output to custom file
+# Combine options
+./scripts/config/pull-azure-config.sh --update-functions --no-backup
+
+# Output to custom file (for Aspire config)
 ./scripts/config/pull-azure-config.sh --output /path/to/config.json
 ```
 
@@ -442,7 +510,7 @@ If you encounter issues:
 
 ## Examples
 
-### Example 1: First-Time Setup with Infrastructure Deployment
+### Example 1: First-Time Setup with Infrastructure Deployment (Aspire)
 
 ```bash
 # Install prerequisites
@@ -452,23 +520,51 @@ brew install azure-cli jq fzf
 az login
 az account set --subscription "My Subscription"
 
-# Deploy infrastructure (Document Intelligence + AI Search)
+# Deploy infrastructure (Document Intelligence + AI Search + Storage)
 cd infra
 ./deploy-local-dev.sh
 
-# Retrieve deployed configuration
+# Auto-update configuration from deployed resources
 cd ..
-./scripts/config/get-config.sh
+./scripts/config/get-config.sh --update-aspire
 
 # Configure Azure OpenAI interactively
 ./scripts/config/pull-azure-config.sh
 
-# Start application
+# Start application with Aspire
 cd DocumentQA.AppHost
 dotnet run
 ```
 
-### Example 2: Quick Setup (Interactive Only)
+### Example 1b: First-Time Setup for Standalone Functions
+
+```bash
+# Install prerequisites
+brew install azure-cli jq
+
+# Authenticate
+az login
+az account set --subscription "My Subscription"
+
+# Deploy infrastructure
+cd infra
+./deploy-local-dev.sh
+
+# Auto-update local.settings.json from deployed resources
+cd ..
+./scripts/config/get-config.sh --update-functions
+
+# Manually add Azure OpenAI configuration to local.settings.json
+# Edit DocumentQA.Functions/local.settings.json and add:
+#   "Azure__OpenAI__Endpoint": "https://your-openai.openai.azure.com/",
+#   "Azure__OpenAI__ApiKey": "your-api-key",
+
+# Start Functions standalone
+cd DocumentQA.Functions
+func start
+```
+
+### Example 2: Quick Setup (Interactive Only - Aspire)
 
 ```bash
 # Install prerequisites
@@ -478,29 +574,56 @@ brew install azure-cli jq fzf
 az login
 az account set --subscription "My Subscription"
 
-# Run configuration script
+# Run interactive Azure OpenAI configuration
 ./scripts/config/pull-azure-config.sh
 
-# Start application
+# Start application with Aspire
 cd DocumentQA.AppHost
 dotnet run
 ```
 
-### Example 3: Retrieve Configuration After Deployment
+### Example 2b: Quick Setup for Standalone Functions
 
-After deploying infrastructure, retrieve the configuration:
+```bash
+# Install prerequisites
+brew install azure-cli jq fzf
+
+# Authenticate
+az login
+
+# Configure Azure OpenAI for Functions
+./scripts/config/pull-azure-config.sh --update-functions
+
+# Note: You still need to deploy infrastructure first OR manually set
+# Document Intelligence, AI Search, and Storage configuration
+
+# Start Functions standalone
+cd DocumentQA.Functions
+func start
+```
+
+### Example 3: Retrieve and Update Configuration After Deployment
+
+After deploying infrastructure, automatically update configuration:
 
 ```bash
 # Deploy infrastructure
 cd infra
 ./deploy-local-dev.sh
 
-# Retrieve configuration from deployed resources
+# Option 1: Auto-update Aspire configuration
 cd ..
-./scripts/config/get-config.sh
+./scripts/config/get-config.sh --update-aspire
 
-# Copy the output JSON and manually update appsettings.Development.json
-# Or use the environment variable exports for other purposes
+# Option 2: Auto-update Functions configuration
+./scripts/config/get-config.sh --update-functions
+
+# Option 3: Update both
+./scripts/config/get-config.sh --update-functions --update-aspire
+
+# Option 4: Just view the configuration (no updates)
+./scripts/config/get-config.sh
+# Then manually copy the output JSON to your config files
 ```
 
 ### Example 4: Update Model Deployments
@@ -556,12 +679,15 @@ az login --service-principal \
 ## Best Practices
 
 1. **Always review configuration** after running the script
-2. **Keep backups** - don't use `--no-backup` unless necessary
-3. **Use version control** - commit working configurations
-4. **Rotate API keys regularly** - re-run `get-config.sh` or `pull-azure-config.sh` after rotation
+2. **Keep backups** - `pull-azure-config.sh` creates automatic backups
+3. **Use version control** - commit working configurations (but not secrets!)
+4. **Rotate API keys regularly** - re-run `get-config.sh --update-aspire` or `pull-azure-config.sh` after rotation
 5. **Document custom deployments** - if using non-standard model names
 6. **Test after configuration** - verify endpoints are accessible
-7. **Use get-config.sh after infrastructure changes** - automatically pulls latest values from deployed resources
+7. **Use `--update-functions` or `--update-aspire`** - automated updates are safer than manual copy-paste
+8. **Combine scripts for complete setup** - Use `get-config.sh --update-aspire` for infrastructure, then `pull-azure-config.sh --update-functions` for OpenAI in both configs
+9. **Use get-config.sh after infrastructure changes** - automatically pulls latest values from deployed resources
+10. **For dual setup (Aspire + Functions)** - Run both scripts with `--update-functions` to keep configurations in sync
 
 ## Security Considerations
 

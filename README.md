@@ -45,8 +45,9 @@ The system consists of three main components:
 
 ### For Local Development
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) (for Aspire and Azurite)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (for Aspire)
 - [Azure Subscription](https://azure.microsoft.com/free/) with Azure OpenAI Service
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (for deploying local-dev infrastructure)
 
 ### For Azure Deployment
 - [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (recommended)
@@ -103,8 +104,8 @@ dotnet run
 ```
 
 This will:
-- Start Azurite (local storage emulator) in Docker
-- Launch the Azure Functions app
+- Launch the Azure Functions app with configuration from appsettings.Development.json
+- Connect to Azure Storage (deployed via infra/main.local-dev.bicep)
 - Open the Aspire Dashboard at `https://localhost:17XXX`
 
 ### 4. Test the API
@@ -282,20 +283,25 @@ Check the Aspire Dashboard for:
 2. **Rate Limits**: Azure OpenAI has rate limits; adjust batch sizes if needed
 3. **Memory Issues**: Large PDFs may require increased function memory allocation
 
-### Local Storage Access
+### Azure Storage Access
 
-View Azurite storage contents:
+View your Azure Storage contents:
 ```bash
+# Get connection string from your deployment
+STORAGE_CONNECTION_STRING="<your-connection-string-from-bicep-output>"
+
 # List uploaded documents
 az storage blob list \
   --container-name documents \
-  --connection-string "UseDevelopmentStorage=true"
+  --connection-string "$STORAGE_CONNECTION_STRING"
 
 # Check document processing status
 az storage entity query \
   --table-name documentstatus \
-  --connection-string "UseDevelopmentStorage=true"
+  --connection-string "$STORAGE_CONNECTION_STRING"
 ```
+
+Alternatively, use [Azure Storage Explorer](https://azure.microsoft.com/features/storage-explorer/) for a GUI experience.
 
 ## Deployment
 

@@ -1,22 +1,8 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Add Azurite for local Azure Storage emulation (Blob Storage + Table Storage)
-var storage = builder.AddAzureStorage("storage")
-    .RunAsEmulator(emulator =>
-    {
-        // Use persistent storage for Azurite
-        emulator.WithDataVolume();
-    });
-
-// Get individual storage services
-var blobs = storage.AddBlobs("blobs");
-var tables = storage.AddTables("tables");
-
 // Add Azure Functions project with all required configuration
 var functions = builder.AddProject<Projects.DocumentQA_Functions>("documentqa-functions")
     .WithHttpEndpoint(port: 7071, name: "http")
-    .WithReference(blobs)
-    .WithReference(tables)
     // Azure OpenAI Configuration
     .WithEnvironment("Azure__OpenAI__Endpoint", builder.Configuration["Azure:OpenAI:Endpoint"] ?? "")
     .WithEnvironment("Azure__OpenAI__ApiKey", builder.Configuration["Azure:OpenAI:ApiKey"] ?? "")
@@ -38,7 +24,9 @@ var functions = builder.AddProject<Projects.DocumentQA_Functions>("documentqa-fu
         builder.Configuration["Azure:AISearch:AdminKey"] ?? "")
     .WithEnvironment("Azure__AISearch__IndexName",
         builder.Configuration["Azure:AISearch:IndexName"] ?? "document-chunks")
-    // Azure Storage Configuration (container and table names)
+    // Azure Storage Configuration
+    .WithEnvironment("Azure__Storage__ConnectionString",
+        builder.Configuration["Azure:Storage:ConnectionString"] ?? "")
     .WithEnvironment("Azure__Storage__ContainerName",
         builder.Configuration["Azure:Storage:ContainerName"] ?? "documents")
     .WithEnvironment("Azure__Storage__TableName",
