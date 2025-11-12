@@ -88,6 +88,22 @@ builder.Services.AddSingleton<QueryService>();
 builder.Services.AddSingleton<DocumentStatusService>();
 builder.Services.AddSingleton<DocumentIngestionService>();
 
+// Configure CORS for local development
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins(
+            "http://localhost:5173",
+            "http://localhost:5174", // Backup port if 5173 in use
+            "http://127.0.0.1:5173"
+        )
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
+    });
+});
+
 // Initialize infrastructure on startup
 var host = builder.Build();
 
