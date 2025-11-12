@@ -216,7 +216,7 @@ if [ "$UPDATE_FUNCTIONS" = true ]; then
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AzureWebJobsStorage": "$STORAGE_CONNECTION",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "Azure__OpenAI__Endpoint": "$OPENAI_ENDPOINT",
     "Azure__OpenAI__ApiKey": "$OPENAI_KEY",
@@ -246,7 +246,7 @@ EOF
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AzureWebJobsStorage": "$STORAGE_CONNECTION",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "Azure__OpenAI__Endpoint": "$OPENAI_ENDPOINT",
     "Azure__OpenAI__ApiKey": "$OPENAI_KEY",

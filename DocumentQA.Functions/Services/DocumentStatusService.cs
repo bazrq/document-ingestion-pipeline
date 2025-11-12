@@ -8,9 +8,9 @@ public class DocumentStatusService
 {
     private readonly TableClient _tableClient;
 
-    public DocumentStatusService(string connectionString, string tableName = "documentstatus")
+    public DocumentStatusService(TableClient tableClient)
     {
-        _tableClient = new TableClient(connectionString, tableName);
+        _tableClient = tableClient;
     }
 
     /// <summary>
