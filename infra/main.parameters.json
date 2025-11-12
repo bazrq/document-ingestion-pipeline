@@ -1,0 +1,66 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION=eastus}"
+    },
+    "openAiEndpoint": {
+      "value": "${AZURE_OPENAI_ENDPOINT}"
+    },
+    "openAiApiKey": {
+      "value": "${AZURE_OPENAI_API_KEY}"
+    },
+    "openAiEmbeddingDeploymentName": {
+      "value": "${AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME=text-embedding-3-large}"
+    },
+    "openAiChatDeploymentName": {
+      "value": "${AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=gpt-5-mini}"
+    },
+    "openAiApiVersion": {
+      "value": "${AZURE_OPENAI_API_VERSION=2024-12-01-preview}"
+    },
+    "chunkSize": {
+      "value": "${PROCESSING_CHUNK_SIZE=800}"
+    },
+    "chunkOverlap": {
+      "value": "${PROCESSING_CHUNK_OVERLAP=50}"
+    },
+    "maxChunksToRetrieve": {
+      "value": "${PROCESSING_MAX_CHUNKS_TO_RETRIEVE=20}"
+    },
+    "topChunksForAnswer": {
+      "value": "${PROCESSING_TOP_CHUNKS_FOR_ANSWER=7}"
+    },
+    "answerTemperature": {
+      "value": "${ANSWER_GENERATION_TEMPERATURE=0.3}"
+    },
+    "answerMaxTokens": {
+      "value": "${ANSWER_GENERATION_MAX_TOKENS=1500}"
+    },
+    "minimumConfidenceThreshold": {
+      "value": "${ANSWER_GENERATION_MIN_CONFIDENCE=0.5}"
+    },
+    "documentsContainerName": {
+      "value": "${STORAGE_CONTAINER_NAME=documents}"
+    },
+    "documentStatusTableName": {
+      "value": "${STORAGE_TABLE_NAME=documentstatus}"
+    },
+    "searchIndexName": {
+      "value": "${AI_SEARCH_INDEX_NAME=document-chunks}"
+    },
+    "searchSku": {
+      "value": "${AI_SEARCH_SKU=standard}"
+    },
+    "documentIntelligenceSku": {
+      "value": "${DOCUMENT_INTELLIGENCE_SKU=F0}"
+    },
+    "principalId": {
+      "value": "${AZURE_PRINCIPAL_ID=}"
+    }
+  }
+}

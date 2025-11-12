@@ -8,7 +8,7 @@ This is a **Document QA System** built with Azure Functions (.NET 10) and orches
 
 1. **Upload**: Users upload PDFs via HTTP endpoint
 2. **Process**: Blob trigger extracts text, chunks it, generates embeddings, and indexes in Azure AI Search
-3. **Query**: Users ask questions, system retrieves relevant chunks and generates answers using GPT-4
+3. **Query**: Users ask questions, system retrieves relevant chunks and generates answers using GPT-5-mini
 
 **Key Technologies**: Azure Functions (isolated worker), Azure OpenAI, Azure Document Intelligence, Azure AI Search, Azure Storage (Blob + Table), .NET Aspire
 
@@ -99,7 +99,7 @@ DocumentQA.sln
 - `DocumentIngestionService.cs`: Orchestrates extraction, chunking, embedding generation
 - `SearchService.cs`: Manages Azure AI Search index creation and vector search
 - `EmbeddingService.cs`: Generates embeddings via Azure OpenAI
-- `AnswerGenerationService.cs`: Generates GPT-4 answers with citations
+- `AnswerGenerationService.cs`: Generates GPT-5-mini answers with citations
 - `QueryService.cs`: Orchestrates retrieval and answer generation pipeline
 - `DocumentStatusService.cs`: Tracks document processing state in Table Storage
 
@@ -130,7 +130,7 @@ Blob Trigger → DocumentIngestionService.ExtractTextFromStreamAsync (Azure Doc 
 User → QueryFunction → QueryService.AskQuestionAsync
                     → EmbeddingService.GenerateEmbeddingAsync (embed question)
                     → SearchService.SearchAsync (vector search)
-                    → AnswerGenerationService.GenerateAnswerAsync (GPT-4)
+                    → AnswerGenerationService.GenerateAnswerAsync (GPT-5-mini)
                     → Return answer with citations
 ```
 
@@ -141,7 +141,7 @@ All config is environment-variable based. Key settings:
 **Azure Services** (required):
 - `Azure__OpenAI__Endpoint`, `Azure__OpenAI__ApiKey`
 - `Azure__OpenAI__EmbeddingDeploymentName` (default: "text-embedding-3-large")
-- `Azure__OpenAI__ChatDeploymentName` (default: "gpt-4")
+- `Azure__OpenAI__ChatDeploymentName` (default: "gpt-5-mini")
 - `Azure__DocumentIntelligence__Endpoint`, `Azure__DocumentIntelligence__ApiKey`
 - `Azure__AISearch__Endpoint`, `Azure__AISearch__AdminKey`
 - `Azure__AISearch__IndexName` (default: "document-chunks")

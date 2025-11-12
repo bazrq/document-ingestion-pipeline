@@ -7,7 +7,7 @@
         "Azure__OpenAI__Endpoint": "https://your-openai-resource.openai.azure.com/",
         "Azure__OpenAI__ApiKey": "your-api-key-here",
         "Azure__OpenAI__EmbeddingDeploymentName": "text-embedding-3-large",
-        "Azure__OpenAI__ChatDeploymentName": "gpt-4",
+        "Azure__OpenAI__ChatDeploymentName": "gpt-5-mini",
 
         "Azure__DocumentIntelligence__Endpoint": "https://your-document-intelligence.cognitiveservices.azure.com/",
         "Azure__DocumentIntelligence__ApiKey": "your-api-key-here",

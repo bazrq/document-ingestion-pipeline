@@ -9,6 +9,12 @@ DocumentQA.AppHost/appsettings.Development.json
 DocumentQA.AppHost/appsettings.*.json
 !DocumentQA.AppHost/appsettings.json
 
+# Azure Developer CLI environment files (contain secrets)
+.azure/*/config.json
+.azure/*/.env
+.azure/*/config/
+!.azure/*/.env.template
+
 # User-specific files
 *.suo
 *.user

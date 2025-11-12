@@ -41,7 +41,7 @@ Before running with Aspire, ensure you have:
    ```
 
 3. **Azure Resources** configured:
-   - Azure OpenAI (with `text-embedding-3-large` and `gpt-4` deployments)
+   - Azure OpenAI (with `text-embedding-3-large` and `gpt-5-mini` deployments)
    - Azure Document Intelligence
    - Azure AI Search (Standard tier S1 for vector search)
 
@@ -70,7 +70,7 @@ Create a new file `DocumentQA.AppHost/appsettings.Development.json` with your Az
       "Endpoint": "https://YOUR-RESOURCE.openai.azure.com/",
       "ApiKey": "YOUR-API-KEY",
       "EmbeddingDeploymentName": "text-embedding-3-large",
-      "ChatDeploymentName": "gpt-4"
+      "ChatDeploymentName": "gpt-5-mini"
     },
     "DocumentIntelligence": {
       "Endpoint": "https://YOUR-RESOURCE.cognitiveservices.azure.com/",
@@ -94,8 +94,8 @@ The `appsettings.json` file contains default values for processing parameters. Y
 - **Processing.ChunkSize**: 800 tokens (adjust for different chunk sizes)
 - **Processing.ChunkOverlap**: 50 tokens (context continuity)
 - **Processing.MaxChunksToRetrieve**: 20 (initial retrieval count)
-- **Processing.TopChunksForAnswer**: 7 (chunks sent to GPT-4)
-- **AnswerGeneration.Temperature**: 0.3 (GPT-4 creativity level)
+- **Processing.TopChunksForAnswer**: 7 (chunks sent to GPT-5-mini)
+- **AnswerGeneration.Temperature**: 0.3 (GPT-5-mini creativity level)
 - **AnswerGeneration.MaxTokens**: 1500 (max answer length)
 - **AnswerGeneration.MinimumConfidenceThreshold**: 0.5 (low confidence warning)
 

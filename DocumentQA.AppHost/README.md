@@ -29,7 +29,7 @@ Create `appsettings.Development.json` (this file is gitignored) with your Azure 
       "Endpoint": "https://YOUR-OPENAI-RESOURCE.openai.azure.com/",
       "ApiKey": "YOUR-OPENAI-API-KEY",
       "EmbeddingDeploymentName": "text-embedding-3-large",
-      "ChatDeploymentName": "gpt-4"
+      "ChatDeploymentName": "gpt-5-mini"
     },
     "DocumentIntelligence": {
       "Endpoint": "https://YOUR-DOC-INTEL-RESOURCE.cognitiveservices.azure.com/",
@@ -45,7 +45,7 @@ Create `appsettings.Development.json` (this file is gitignored) with your Azure 
 ```
 
 2. **Required Azure Resources:**
-   - **Azure OpenAI**: Must have deployments for text-embedding-3-large and gpt-4
+   - **Azure OpenAI**: Must have deployments for text-embedding-3-large and gpt-5-mini
    - **Azure Document Intelligence**: For PDF text extraction
    - **Azure AI Search**: Standard tier (S1) for vector search support
    - **Azurite**: Automatically started by Aspire (no setup needed)

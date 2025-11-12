@@ -21,7 +21,8 @@ var openAIConfig = new OpenAIConfig
     Endpoint = Environment.GetEnvironmentVariable("Azure__OpenAI__Endpoint") ?? throw new InvalidOperationException("Azure__OpenAI__Endpoint not configured"),
     ApiKey = Environment.GetEnvironmentVariable("Azure__OpenAI__ApiKey") ?? throw new InvalidOperationException("Azure__OpenAI__ApiKey not configured"),
     EmbeddingDeploymentName = Environment.GetEnvironmentVariable("Azure__OpenAI__EmbeddingDeploymentName") ?? throw new InvalidOperationException("Azure__OpenAI__EmbeddingDeploymentName not configured"),
-    ChatDeploymentName = Environment.GetEnvironmentVariable("Azure__OpenAI__ChatDeploymentName") ?? throw new InvalidOperationException("Azure__OpenAI__ChatDeploymentName not configured")
+    ChatDeploymentName = Environment.GetEnvironmentVariable("Azure__OpenAI__ChatDeploymentName") ?? throw new InvalidOperationException("Azure__OpenAI__ChatDeploymentName not configured"),
+    ApiVersion = Environment.GetEnvironmentVariable("Azure__OpenAI__ApiVersion") ?? "2024-12-01-preview"
 };
 
 var docIntelConfig = new DocumentIntelligenceConfig
