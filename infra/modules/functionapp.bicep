@@ -14,6 +14,7 @@ param openAiEndpoint string
 param openAiApiKey string
 param openAiEmbeddingDeploymentName string
 param openAiChatDeploymentName string
+param openAiApiVersion string
 
 // Document Intelligence Configuration
 param documentIntelligenceEndpoint string
@@ -66,6 +67,9 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
   location: location
   tags: tags
   kind: 'functionapp'
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     serverFarmId: hostingPlan.id
     siteConfig: {
@@ -110,6 +114,10 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
         {
           name: 'Azure__OpenAI__ChatDeploymentName'
           value: openAiChatDeploymentName
+        }
+        {
+          name: 'Azure__OpenAI__ApiVersion'
+          value: openAiApiVersion
         }
         // Document Intelligence Configuration
         {
@@ -179,7 +187,7 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
       ]
       ftpsState: 'FtpsOnly'
       minTlsVersion: '1.2'
-      netFrameworkVersion: 'v8.0'
+      netFrameworkVersion: 'v10.0'
       use32BitWorkerProcess: false
       cors: {
         allowedOrigins: [

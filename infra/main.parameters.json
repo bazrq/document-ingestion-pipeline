@@ -20,6 +20,9 @@
     "openAiChatDeploymentName": {
       "value": "${AZURE_OPENAI_CHAT_DEPLOYMENT_NAME=gpt-4}"
     },
+    "openAiApiVersion": {
+      "value": "${AZURE_OPENAI_API_VERSION=2024-02-15-preview}"
+    },
     "chunkSize": {
       "value": "${PROCESSING_CHUNK_SIZE=800}"
     },

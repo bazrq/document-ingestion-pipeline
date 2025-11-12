@@ -26,6 +26,9 @@ param openAiEmbeddingDeploymentName string = 'text-embedding-3-large'
 @description('Azure OpenAI chat deployment name')
 param openAiChatDeploymentName string = 'gpt-4'
 
+@description('Azure OpenAI API version')
+param openAiApiVersion string = '2024-02-15-preview'
+
 // Processing Configuration
 @description('Chunk size in characters for document processing')
 param chunkSize int = 800
@@ -161,6 +164,7 @@ module functionApp './modules/functionapp.bicep' = {
     openAiApiKey: openAiApiKey
     openAiEmbeddingDeploymentName: openAiEmbeddingDeploymentName
     openAiChatDeploymentName: openAiChatDeploymentName
+    openAiApiVersion: openAiApiVersion
 
     // Document Intelligence Configuration
     documentIntelligenceEndpoint: documentIntelligence.outputs.endpoint
