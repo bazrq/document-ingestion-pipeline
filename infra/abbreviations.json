@@ -1,0 +1,8 @@
+{
+  "resourcesResourceGroups": "rg-",
+  "storageStorageAccounts": "st",
+  "webSitesFunctions": "func-",
+  "insightsComponents": "appi-",
+  "searchSearchServices": "srch-",
+  "cognitiveServicesFormRecognizer": "di-"
+}

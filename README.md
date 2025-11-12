@@ -43,13 +43,20 @@ The system consists of three main components:
 
 ## Prerequisites
 
+### For Local Development
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) (for local development)
-- [Azure Subscription](https://azure.microsoft.com/free/) with the following services:
-  - Azure OpenAI Service
-  - Azure Document Intelligence
-  - Azure AI Search (Standard tier or higher)
-- [Azure Functions Core Tools](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local) (optional, for standalone function development)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (for Aspire and Azurite)
+- [Azure Subscription](https://azure.microsoft.com/free/) with Azure OpenAI Service
+
+### For Azure Deployment
+- [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (recommended)
+- [Azure Subscription](https://azure.microsoft.com/free/)
+- Existing Azure OpenAI resource with deployed models:
+  - `text-embedding-3-large` (or compatible embedding model)
+  - `gpt-4` (or compatible chat model)
+
+### Optional
+- [Azure Functions Core Tools](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local) (for standalone function development)
 
 ## Quick Start
 
@@ -292,7 +299,37 @@ az storage entity query \
 
 ## Deployment
 
-The Azure Functions app can be deployed to Azure using:
+### Azure Developer CLI (Recommended)
+
+The fastest way to deploy to Azure is using the Azure Developer CLI (`azd`):
+
+```bash
+# First-time setup
+azd init
+azd env new dev
+
+# Set required Azure OpenAI configuration
+azd env set AZURE_OPENAI_ENDPOINT "https://your-openai.openai.azure.com/"
+azd env set AZURE_OPENAI_API_KEY "your-api-key"
+
+# Deploy everything (infrastructure + code)
+azd up
+```
+
+This will:
+- Provision all Azure resources (Storage, Document Intelligence, AI Search, Functions, App Insights)
+- Build and deploy the Functions app
+- Configure all application settings automatically
+
+For detailed deployment instructions, see **[infra/README.md](./infra/README.md)**.
+
+**Requirements**:
+- Existing Azure OpenAI resource with `text-embedding-3-large` and `gpt-4` deployments
+- Azure subscription with permissions to create resources
+
+### Manual Deployment (Alternative)
+
+You can also deploy using Azure Functions Core Tools:
 
 ```bash
 cd DocumentQA.Functions
@@ -301,10 +338,28 @@ func azure functionapp publish <function-app-name>
 
 **Important**: Do not deploy the Aspire AppHost project. It is for local development only.
 
-For production deployment:
-1. Configure Azure resources (Storage Account, OpenAI, etc.)
+For manual production deployment:
+1. Create Azure resources (Storage Account, Document Intelligence, AI Search, etc.)
 2. Set environment variables in Azure Function App Configuration
 3. Deploy using Azure Functions Core Tools, Azure CLI, or CI/CD pipeline
+
+### Multi-Environment Deployments
+
+Deploy to different environments (dev, staging, prod):
+
+```bash
+# Development
+azd env new dev
+azd env set AZURE_OPENAI_ENDPOINT "..."
+azd up
+
+# Production
+azd env new prod
+azd env set AZURE_OPENAI_ENDPOINT "..."
+azd up
+```
+
+See [infra/README.md](./infra/README.md) for environment-specific configuration.
 
 ## Performance Considerations
 
