@@ -267,3 +267,6 @@ az storage entity query --table-name documentstatus --connection-string "UseDeve
 - `DocumentQA.AppHost/README.md`: Detailed Aspire setup instructions
 - `docs/ASPIRE_SETUP.md`: Comprehensive Aspire integration guide
 - Function-level comments explain business logic throughout codebase
+
+## Context Priming
+Read README.md, docs/* and run tree to understand the codebase.
