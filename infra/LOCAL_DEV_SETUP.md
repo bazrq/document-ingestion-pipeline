@@ -1,6 +1,6 @@
-# Infrastructure for Local Aspire Development
+# Infrastructure for Local Azure Functions Development
 
-This directory contains a **Bicep template** designed specifically for local development with .NET Aspire. It deploys Azure services needed for local development.
+This directory contains a **Bicep template** designed specifically for local development with Azure Functions. It deploys Azure services needed for local development.
 
 ## What Gets Deployed
 
@@ -9,7 +9,7 @@ This directory contains a **Bicep template** designed specifically for local dev
 - **Azure AI Search** (Standard S1) - For vector search
 - **Azure Storage Account** (Standard_LRS) - For blob and table storage
 
-**Local Services (via Aspire):**
+**Local Services (via Azure Functions):**
 - **Azure Functions** - Runs locally with injected configuration
 - **React Frontend** - Vite dev server with automatic configuration
 
@@ -44,9 +44,9 @@ Before deploying:
    - `text-embedding-3-large` (or your preferred embedding model)
    - `gpt-5-mini` (or your preferred chat model)
 
-3. **.NET 10 SDK** installed (for running Aspire)
+3. **.NET 10 SDK** installed (for running Azure Functions)
 
-4. **Docker Desktop** running (for Aspire Dashboard)
+4. **Docker Desktop** running (for Function logs)
 
 5. **Node.js** installed (for React frontend)
 
@@ -124,16 +124,16 @@ Once configured:
 # Ensure Docker Desktop is running
 docker ps
 
-# Start the Aspire stack
+# Start the Azure Functions stack
 cd DocumentQA.AppHost
 dotnet run
 ```
 
-Aspire will:
+Azure Functions will:
 1. Launch Azure Functions with all environment variables injected
 2. Launch React frontend (Vite dev server on port 5173)
 3. Connect to Azure Storage and other Azure services
-4. Open Aspire Dashboard at `https://localhost:17XXX`
+4. Open Function logs at `https://localhost:17XXX`
 
 ### Testing the Endpoints
 
@@ -157,7 +157,7 @@ curl -X POST http://localhost:7071/api/query \
 │           LOCAL DEVELOPMENT MACHINE             │
 │                                                 │
 │  ┌──────────────────────────────────────────┐  │
-│  │        .NET Aspire (AppHost)             │  │
+│  │        Azure Functions (AppHost)             │  │
 │  │                                          │  │
 │  │  ┌─────────────┐     ┌──────────────┐   │  │
 │  │  │ Azure Funcs │     │React Frontend│   │  │
@@ -234,7 +234,7 @@ Edit `infra/main.local-dev.parameters.json`:
 
 ### "AI Search index not found"
 - Index is created on first document upload
-- Check Aspire Dashboard logs for indexing errors
+- Check Function logs logs for indexing errors
 
 ### "Azure OpenAI rate limits"
 - Check your deployment quotas in Azure Portal
@@ -244,7 +244,7 @@ Edit `infra/main.local-dev.parameters.json`:
 ### "Connection string not found"
 - Ensure storage connection string is in `appsettings.Development.json`
 - Run `infra/deploy-local-dev.sh` if storage hasn't been deployed
-- Check Aspire Dashboard → Environment Variables
+- Check Function logs → Environment Variables
 
 ## Viewing Azure Storage
 
@@ -291,23 +291,23 @@ az group delete --name $RESOURCE_GROUP --yes
 | Component | Full Deployment (`main.bicep`) | Local Dev (`main.local-dev.bicep`) |
 |-----------|--------------------------------|-------------------------------------|
 | Storage Account | Azure Storage (production-grade) | Azure Storage (Standard_LRS) |
-| Azure Functions | Deployed to Azure Functions service | Runs locally via Aspire |
+| Azure Functions | Deployed to Azure Functions service | Runs locally via Azure Functions |
 | React Frontend | Deployed to Azure Static Web Apps | Runs locally via Vite dev server |
-| Application Insights | Azure resource | Local telemetry via Aspire Dashboard |
+| Application Insights | Azure resource | Local telemetry via Function logs |
 | Document Intelligence | Azure (F0 or S0) | Azure (F0 free tier default) |
 | AI Search | Azure (Standard S1) | Azure (Standard S1) |
 | Azure OpenAI | Existing (assumed) | Existing (assumed) |
 
 ## Next Steps
 
-- Review `../DocumentQA.AppHost/README.md` for Aspire configuration details
+- Review `../DocumentQA.AppHost/README.md` for Azure Functions configuration details
 - Review `../CLAUDE.md` for architecture and development patterns
-- See `../docs/ASPIRE_SETUP.md` for comprehensive Aspire integration guide
+- See `../docs/ASPIRE_SETUP.md` for comprehensive Azure Functions integration guide
 
 ## Support
 
 For issues:
-1. Check Aspire Dashboard logs
+1. Check Function logs logs
 2. Verify all configuration values in `appsettings.Development.json`
 3. Ensure Docker Desktop is running
 4. Check Azure Portal for service health

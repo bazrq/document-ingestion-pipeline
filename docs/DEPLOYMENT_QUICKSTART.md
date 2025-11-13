@@ -219,7 +219,6 @@ az resource list --resource-group $(azd env get-value AZURE_RESOURCE_GROUP) -o t
 - **Detailed Infrastructure Guide**: [infra/README.md](./infra/README.md)
 - **Development Guide**: [README.md](./README.md)
 - **Claude Code Instructions**: [CLAUDE.md](./CLAUDE.md)
-- **Aspire Setup**: [DocumentQA.AppHost/README.md](./DocumentQA.AppHost/README.md)
 
 ## Support
 

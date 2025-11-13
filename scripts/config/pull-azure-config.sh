@@ -62,10 +62,10 @@ OPTIONS:
                             (default: DocumentQA.AppHost/appsettings.Development.json)
 
 EXAMPLES:
-    # Interactive configuration with defaults (Aspire only)
+    # Interactive configuration with defaults (Azure Functions only)
     ./pull-azure-config.sh
 
-    # Update both Aspire and Functions configuration
+    # Update both Azure Functions and Functions configuration
     ./pull-azure-config.sh --update-functions
 
     # Configure without creating backup
@@ -225,9 +225,9 @@ configure_azure_openai() {
     local embedding_deployment
     embedding_deployment=$(echo "$openai_config" | jq -r '.embeddingDeployment')
 
-    # Update Aspire appsettings.Development.json
+    # Update Azure Functions appsettings.Development.json
     if update_appsettings_openai "$output_file" "$endpoint" "$api_key" "$embedding_deployment" "$chat_deployment"; then
-        print_success "Updated Aspire configuration: $output_file"
+        print_success "Updated Azure Functions configuration: $output_file"
     else
         print_error "Failed to apply configuration to $output_file"
         return 1
@@ -250,7 +250,7 @@ configure_azure_openai() {
         if update_local_settings_openai "$FUNCTIONS_FILE" "$endpoint" "$api_key" "$embedding_deployment" "$chat_deployment"; then
             print_success "Updated Functions configuration: $FUNCTIONS_FILE"
         else
-            print_warning "Failed to update Functions configuration (Aspire config was still updated)"
+            print_warning "Failed to update Functions configuration (Azure Functions config was still updated)"
         fi
     fi
 
@@ -274,14 +274,14 @@ show_next_steps() {
 
     if [ "$UPDATE_FUNCTIONS" = true ]; then
         echo "2. Start the application:"
-        echo "   With Aspire: ${COLOR_BLUE}cd DocumentQA.AppHost && dotnet run${COLOR_RESET}"
+        echo "   With Azure Functions: ${COLOR_BLUE}cd DocumentQA.AppHost && dotnet run${COLOR_RESET}"
         echo "   Or standalone Functions: ${COLOR_BLUE}cd DocumentQA.Functions && func start${COLOR_RESET}"
     else
-        echo "2. Start the application with Aspire:"
+        echo "2. Start the application with Azure Functions:"
         echo "   ${COLOR_BLUE}cd DocumentQA.AppHost && dotnet run${COLOR_RESET}"
     fi
     echo ""
-    echo "3. Access the Aspire Dashboard when prompted (if using Aspire)"
+    echo "3. Access the Functions console when prompted (if using Azure Functions)"
     echo ""
     echo "4. Test the APIs:"
     echo "   Upload:  ${COLOR_BLUE}POST http://localhost:7071/api/upload${COLOR_RESET}"

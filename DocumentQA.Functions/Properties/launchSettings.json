@@ -2,7 +2,7 @@
   "profiles": {
     "DocumentQA.Functions": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7026",
+      "commandLineArgs": "--port 7071",
       "launchBrowser": false
     }
   }

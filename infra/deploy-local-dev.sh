@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Deploy minimal infrastructure for local Aspire development
+# Deploy minimal infrastructure for local Azure Functions Core Tools development
 # This deploys only Document Intelligence + AI Search
-# Aspire handles storage locally with Azurite
+# Azure Functions Core Tools handles storage locally with Azurite
 
 set -e
 
@@ -127,14 +127,14 @@ cat <<EOF
 }
 EOF
 echo ""
-echo "2. Start the Aspire stack:"
+echo "2. Start the Azure Functions Core Tools stack:"
 echo "   cd DocumentQA.AppHost"
 echo "   dotnet run"
 echo ""
-echo "3. Aspire will automatically:"
+echo "3. Azure Functions Core Tools will automatically:"
 echo "   - Inject all configuration into Azure Functions"
 echo "   - Initialize the blob container and table storage"
-echo "   - Open the Aspire Dashboard"
+echo "   - Open the Azure Functions Core Tools Dashboard"
 echo ""
 echo "=================================================="
 echo "COST MANAGEMENT"

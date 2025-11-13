@@ -125,4 +125,30 @@ public class DocumentStatusService
             return null;
         }
     }
+
+    /// <summary>
+    /// Retrieves all document statuses, optionally filtered by status
+    /// </summary>
+    public async Task<List<DocumentStatus>> GetAllDocumentsAsync(string? statusFilter = null, int? maxResults = null)
+    {
+        var documents = new List<DocumentStatus>();
+
+        var query = _tableClient.QueryAsync<DocumentStatus>(
+            filter: string.IsNullOrEmpty(statusFilter)
+                ? $"PartitionKey eq 'documents'"
+                : $"PartitionKey eq 'documents' and Status eq '{statusFilter}'",
+            maxPerPage: maxResults);
+
+        await foreach (var document in query)
+        {
+            documents.Add(document);
+            if (maxResults.HasValue && documents.Count >= maxResults.Value)
+            {
+                break;
+            }
+        }
+
+        // Sort by upload time descending (most recent first)
+        return documents.OrderByDescending(d => d.UploadedAt).ToList();
+    }
 }
