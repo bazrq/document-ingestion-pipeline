@@ -8,11 +8,11 @@ This directory contains scripts for local development and testing of the Documen
 
 **Interactive CLI for Document QA System**
 
-A menu-driven command-line interface that provides an intuitive way to interact with the Azure Functions API running locally via Aspire.
+A menu-driven command-line interface that provides an intuitive way to interact with the Azure Functions API running locally via Azure Functions.
 
 #### Prerequisites
 
-1. **Aspire must be running** with the Functions API accessible at `http://localhost:7071`
+1. **Azure Functions must be running** with the Functions API accessible at `http://localhost:7071`
    ```bash
    cd DocumentQA.AppHost
    dotnet run
@@ -210,7 +210,7 @@ The script includes comprehensive error handling:
 #### Troubleshooting
 
 **"API is not reachable" error:**
-- Ensure Aspire is running: `cd DocumentQA.AppHost && dotnet run`
+- Ensure Azure Functions is running: `cd DocumentQA.AppHost && dotnet run`
 - Check that Functions are listening on port 7071
 - Verify no firewall blocking localhost connections
 
@@ -222,7 +222,7 @@ The script includes comprehensive error handling:
 - Verify file path is correct and file exists
 - Check file is a valid PDF
 - Ensure file size is under 100 MB
-- Check API logs in Aspire Dashboard for details
+- Check API logs in Functions console for details
 
 **"Failed to query documents" error:**
 - Ensure documents are in "completed" status (use option 2 to check)
@@ -242,7 +242,7 @@ The script includes comprehensive error handling:
 #### Example Workflow
 
 ```bash
-# 1. Start Aspire
+# 1. Start Azure Functions
 cd DocumentQA.AppHost
 dotnet run
 
@@ -269,13 +269,13 @@ dotnet run
 
 ## Other Scripts
 
-### aspire/run-application.sh
+### functions/run-application.sh
 
-Convenience script to start the Aspire application from the repository root.
+Convenience script to start the Azure Functions application from the repository root.
 
 **Usage:**
 ```bash
-./scripts/local/aspire/run-application.sh
+./scripts/local/functions/run-application.sh
 ```
 
 ## Development
@@ -291,5 +291,5 @@ To add new scripts to this directory:
 ## Additional Resources
 
 - **Main README**: See [../../README.md](../../README.md) for project overview
-- **Aspire Setup**: See [../../docs/ASPIRE_SETUP.md](../../docs/ASPIRE_SETUP.md) for Aspire configuration
+- **Azure Functions Setup**: See [../../docs/ASPIRE_SETUP.md](../../docs/ASPIRE_SETUP.md) for Azure Functions configuration
 - **CLAUDE.md**: See [../../CLAUDE.md](../../CLAUDE.md) for comprehensive development guide

@@ -4,36 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## System Overview
 
-This is a **Document QA System** built with Azure Functions (.NET 10), React frontend, and orchestrated using .NET Aspire. It provides RAG (Retrieval-Augmented Generation) capabilities for PDF documents:
+This is a **Document QA System** built with Azure Functions (.NET 10) and React frontend. It provides RAG (Retrieval-Augmented Generation) capabilities for PDF documents:
 
 1. **Upload**: Users upload PDFs via React frontend (HTTP endpoint)
 2. **Process**: Blob trigger extracts text, chunks it, generates embeddings, and indexes in Azure AI Search
 3. **Query**: Users ask questions via React frontend, system retrieves relevant chunks and generates answers using GPT-5-mini
 
-**Key Technologies**: Azure Functions (isolated worker), React + Vite + TypeScript + Tailwind CSS, Azure OpenAI, Azure Document Intelligence, Azure AI Search, Azure Storage (Blob + Table), .NET Aspire
+**Key Technologies**: Azure Functions (isolated worker), React + Vite + TypeScript + Tailwind CSS, Azure OpenAI, Azure Document Intelligence, Azure AI Search, Azure Storage (Blob + Table)
 
 ## Build and Run Commands
 
-### Running with Aspire (Recommended)
+### Running Locally
 
-Start the entire stack with one command:
+Run the Functions app using Azure Functions Core Tools:
 
 ```bash
-cd DocumentQA.AppHost
-/usr/local/share/dotnet/dotnet run
+cd DocumentQA.Functions
+func start
 ```
-
-This automatically:
-- Launches Azure Functions app with environment variables injected
-- Connects to Azure Storage (deployed via infra/main.local-dev.bicep)
-- Launches React frontend (Vite dev server on port 5173)
-- Opens Aspire Dashboard at https://localhost:17XXX
 
 **Prerequisites**:
 - .NET 10 SDK installed
-- Node.js (for npm) installed
-- Docker Desktop running
-- `DocumentQA.AppHost/appsettings.Development.json` configured with Azure credentials (see `DocumentQA.AppHost/README.md`)
+- [Azure Functions Core Tools v4](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local) installed
+- `DocumentQA.Functions/local.settings.json` configured with Azure credentials (see template at `local.settings.json.template`)
+
+The Functions app will start on `http://localhost:7071` with the following endpoints:
+- `POST http://localhost:7071/api/upload` - Upload PDF documents
+- `POST http://localhost:7071/api/query` - Query documents
+- `GET http://localhost:7071/api/documents` - List documents
+- `GET http://localhost:7071/api/status/{id}` - Check document status
+
+**Note**: Blob triggers require Azure Storage Emulator (Azurite) or connection to real Azure Storage.
 
 ### Building
 
@@ -46,17 +47,6 @@ Build specific project:
 ```bash
 /usr/local/share/dotnet/dotnet build DocumentQA.Functions/DocumentQA.Functions.csproj
 ```
-
-### Running Functions Standalone (Without Aspire)
-
-If you need to run Functions without Aspire:
-
-```bash
-cd DocumentQA.Functions
-func start  # Requires Azure Functions Core Tools
-```
-
-Note: You'll need to manually configure environment variables (30+ values) in `local.settings.json`. Aspire is strongly recommended for development.
 
 ### Testing
 
@@ -79,21 +69,16 @@ Run tests:
 
 ```
 DocumentQA.sln
-├── DocumentQA.AppHost/           # Aspire orchestration (dev only)
-│   └── AppHost.cs               # Configuration injection
-├── DocumentQA.ServiceDefaults/   # Shared telemetry config
-├── DocumentQA.Functions/         # Azure Functions app (backend API)
-│   ├── Functions/               # HTTP and blob trigger endpoints
-│   ├── Services/                # Core business logic
-│   ├── Configuration/           # Config POCOs
-│   ├── Models/                  # Data models
-│   └── Utils/                   # Helper classes
-└── frontend/                     # React frontend (Vite + TypeScript)
-    ├── src/                     # React components and application code
-    ├── public/                  # Static assets
-    ├── vite.config.ts           # Vite configuration
-    └── package.json             # npm dependencies
+└── DocumentQA.Functions/         # Azure Functions app (backend API)
+    ├── Functions/               # HTTP and blob trigger endpoints
+    ├── Services/                # Core business logic
+    ├── Configuration/           # Config POCOs
+    ├── Models/                  # Data models
+    ├── Utils/                   # Helper classes
+    └── local.settings.json      # Local configuration (gitignored)
 ```
+
+**Note**: A React frontend is planned but not yet implemented.
 
 ### Core Components
 
@@ -111,8 +96,8 @@ DocumentQA.sln
 - `DocumentStatusService.cs`: Tracks document processing state in Table Storage
 
 **Configuration Flow**:
-1. Aspire reads `DocumentQA.AppHost/appsettings.Development.json`
-2. Aspire injects values as environment variables (e.g., `Azure__OpenAI__Endpoint`)
+1. Azure Functions Core Tools reads `DocumentQA.Functions/local.settings.json`
+2. Values are made available as environment variables (e.g., `Azure__OpenAI__Endpoint`)
 3. `Program.cs` reads environment variables and creates config POCOs
 4. Config objects injected into services via DI
 
@@ -173,8 +158,8 @@ See `DocumentQA.Functions/Configuration/AzureConfig.cs` for all config classes.
 
 1. Add property to appropriate config class in `Configuration/AzureConfig.cs`
 2. Update `Program.cs` to read from environment variable
-3. Add default value to `DocumentQA.AppHost/AppHost.cs` in `.WithEnvironment()` call
-4. Document in `DocumentQA.AppHost/README.md`
+3. Add entry to `local.settings.json.template` with description
+4. Update documentation in this file (CLAUDE.md)
 
 ### Adding New Azure Function
 
@@ -203,7 +188,7 @@ Documents are chunked by character count (not tokens). See `DocumentQA.Functions
 
 - Processing failures trigger Azure Functions retry (max 5 attempts per `host.json`)
 - Document status tracks failure details (error message, failed step, attempt count)
-- All functions log extensively for Aspire Dashboard tracing
+- All functions log extensively; view logs via `func start` output or Azure Portal
 
 ## Important Constraints
 
@@ -211,32 +196,34 @@ Documents are chunked by character count (not tokens). See `DocumentQA.Functions
 2. **100MB Limit**: Max file size enforced (`UploadFunction.cs:70`)
 3. **Vector Search**: Requires Azure AI Search Standard tier (S1) or higher
 4. **Deployment Mismatch**: Azure OpenAI deployment names must match config (common error)
-5. **Aspire is Dev-Only**: Do not use Aspire AppHost for production deployment
 
 ## Common Tasks
 
 ### Changing Chunk Size
 
-Edit `DocumentQA.AppHost/appsettings.Development.json`:
+Edit `DocumentQA.Functions/local.settings.json`:
 ```json
 {
-  "Processing": {
-    "ChunkSize": 1000,
-    "ChunkOverlap": 100
+  "Values": {
+    "Processing__ChunkSize": "1000",
+    "Processing__ChunkOverlap": "100"
   }
 }
 ```
 
+Restart the Functions app to apply changes.
+
 ### Debugging Processing Failures
 
-1. Check Aspire Dashboard → Traces for full pipeline visibility
+1. Check Functions console output (from `func start`) for real-time logs
 2. Check Table Storage for document status record (includes error details)
 3. Review `ProcessingFunction.cs:currentStep` to identify failure point
 4. Common issues: API key errors, rate limits, deployment name mismatches
+5. For production: Use Azure Portal → Function App → Log stream or Application Insights
 
 ### Testing Locally
 
-Use Aspire Dashboard's "Endpoints" section to find function URLs, then:
+With the Functions app running (`func start`):
 
 ```bash
 # Upload document
@@ -253,7 +240,7 @@ curl -X POST http://localhost:7071/api/query \
 Azure Storage is persistent and accessible via Azure Storage Explorer or Azure CLI:
 
 ```bash
-# Get connection string from appsettings.Development.json or bicep output
+# Get connection string from local.settings.json or bicep output
 STORAGE_CONNECTION_STRING="<your-connection-string>"
 
 # List blobs (requires azure-cli)
@@ -267,60 +254,29 @@ Alternatively, use [Azure Storage Explorer](https://azure.microsoft.com/features
 
 ## File References
 
-- **Main orchestration**: `DocumentQA.AppHost/AppHost.cs`
 - **DI configuration**: `DocumentQA.Functions/Program.cs:10-122`
 - **Processing pipeline**: `DocumentQA.Functions/Functions/ProcessingFunction.cs:28-111`
 - **Query pipeline**: `DocumentQA.Functions/Services/QueryService.cs`
 - **Chunking logic**: `DocumentQA.Functions/Utils/ChunkingStrategy.cs`
 - **Config schema**: `DocumentQA.Functions/Configuration/AzureConfig.cs`
-- **Frontend config**: `frontend/src/config.ts`
-- **Frontend Vite config**: `frontend/vite.config.ts`
+- **Local settings template**: `DocumentQA.Functions/local.settings.json.template`
 - **CORS configuration**: `DocumentQA.Functions/host.json:17-27`
 
 ## Additional Documentation
 
-- `DocumentQA.AppHost/README.md`: Detailed Aspire setup instructions
-- `docs/ASPIRE_SETUP.md`: Comprehensive Aspire integration guide
-- `docs/plans/2025-11-13-aspire-frontend-integration-design.md`: Frontend Aspire integration design
+- `infra/README.md`: Infrastructure deployment guide
+- `docs/DEPLOYMENT_QUICKSTART.md`: Quick deployment guide
 - Function-level comments explain business logic throughout codebase
 
 ## Frontend Development
 
-### API Configuration
+**Note**: A React frontend is planned but not yet implemented.
 
-The frontend uses a centralized API URL configuration in `frontend/src/config.ts`:
-
-```typescript
-import { API_URL } from './config'
-
-// Example: Upload document
-const response = await fetch(`${API_URL}/api/upload`, {
-  method: 'POST',
-  body: formData,
-})
-```
-
-The `VITE_API_URL` environment variable is automatically injected by Aspire and points to the Functions endpoint.
-
-### CORS
-
-CORS is configured in two places for local development:
-1. `DocumentQA.Functions/Program.cs:91-105` - ASP.NET Core middleware
-2. `DocumentQA.Functions/host.json:17-27` - Azure Functions runtime
-
-Allowed origins: `http://localhost:5173`, `http://localhost:5174`, `http://127.0.0.1:5173`
-
-### Running Frontend Standalone
-
-If needed, you can run the frontend independently:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Note: You'll need to ensure the Functions app is running separately for API calls to work.
+When the frontend is created, it should:
+- Connect to the Functions API at `http://localhost:7071` for local development
+- Use environment variables for API configuration (not hardcoded)
+- Be aware of CORS configuration in `DocumentQA.Functions/Program.cs:91-105` and `host.json:17-27`
+- Allowed origins for local dev: `http://localhost:5173`, `http://localhost:5174`, `http://127.0.0.1:5173`
 
 ## Context Priming
-Read README.md, docs/* and run tree to understand the codebase.
+Read README.md, docs/* to understand the codebase.

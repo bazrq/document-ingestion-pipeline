@@ -10,7 +10,7 @@ A production-ready Retrieval-Augmented Generation (RAG) system for PDF documents
 - **Vector Search**: Fast semantic search using Azure AI Search with vector embeddings
 - **AI-Powered Answers**: GPT-5-mini powered answers with source citations
 - **Distributed Processing**: Scalable Azure Functions architecture with blob-triggered processing
-- **Local Development**: Full local development stack with .NET Aspire orchestration
+- **Local Development**: Run locally using Azure Functions Core Tools
 
 ## Architecture
 
@@ -39,15 +39,14 @@ The system consists of three main components:
 - **Azure Document Intelligence** - PDF text extraction
 - **Azure AI Search** - Vector search and indexing
 - **Azure Storage** - Blob storage for documents, Table storage for status tracking
-- **.NET Aspire** - Local orchestration and development
 
 ## Prerequisites
 
 ### For Local Development
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) (for Aspire)
+- [Azure Functions Core Tools v4](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local)
 - [Azure Subscription](https://azure.microsoft.com/free/) with Azure OpenAI Service
-- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (for deploying local-dev infrastructure)
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (for deploying infrastructure)
 
 ### For Azure Deployment
 - [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (recommended)
@@ -55,9 +54,6 @@ The system consists of three main components:
 - Existing Azure OpenAI resource with deployed models:
   - `text-embedding-3-large` (or compatible embedding model)
   - `gpt-5-mini` (or compatible chat model)
-
-### Optional
-- [Azure Functions Core Tools](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local) (for standalone function development)
 
 ## Quick Start
 
@@ -68,45 +64,32 @@ git clone <repository-url>
 cd document-ingestion-pipeline
 ```
 
-### 2. Configure Azure Services
+### 2. Configure Local Settings
 
-Create `DocumentQA.AppHost/appsettings.Development.json`:
-
-```json
-{
-  "Azure": {
-    "OpenAI": {
-      "Endpoint": "https://your-openai-resource.openai.azure.com/",
-      "ApiKey": "your-openai-api-key",
-      "EmbeddingDeploymentName": "text-embedding-3-large",
-      "ChatDeploymentName": "gpt-5-mini"
-    },
-    "DocumentIntelligence": {
-      "Endpoint": "https://your-doc-intelligence.cognitiveservices.azure.com/",
-      "ApiKey": "your-doc-intelligence-key"
-    },
-    "AISearch": {
-      "Endpoint": "https://your-search-service.search.windows.net",
-      "AdminKey": "your-search-admin-key",
-      "IndexName": "document-chunks"
-    }
-  }
-}
-```
-
-See `DocumentQA.AppHost/README.md` for detailed configuration instructions.
-
-### 3. Run with Aspire
+Copy the template and fill in your Azure credentials:
 
 ```bash
-cd DocumentQA.AppHost
-dotnet run
+cd DocumentQA.Functions
+cp local.settings.json.template local.settings.json
+# Edit local.settings.json with your Azure service credentials
 ```
 
-This will:
-- Launch the Azure Functions app with configuration from appsettings.Development.json
-- Connect to Azure Storage (deployed via infra/main.local-dev.bicep)
-- Open the Aspire Dashboard at `https://localhost:17XXX`
+Your `local.settings.json` should include:
+- Azure OpenAI endpoint and API key
+- Azure Document Intelligence endpoint and API key
+- Azure AI Search endpoint and admin key
+- Azure Storage connection string
+
+See `local.settings.json.template` for the complete structure.
+
+### 3. Run Locally
+
+```bash
+cd DocumentQA.Functions
+func start
+```
+
+The Functions app will start on `http://localhost:7071`.
 
 ### 4. Test the API
 
@@ -130,15 +113,13 @@ curl -X POST http://localhost:7071/api/query \
 
 ```
 DocumentQA.sln
-├── DocumentQA.AppHost/           # Aspire orchestration (dev only)
-│   ├── AppHost.cs               # Configuration and service setup
-│   └── appsettings.Development.json
-├── DocumentQA.ServiceDefaults/   # Shared telemetry configuration
 └── DocumentQA.Functions/         # Azure Functions application
     ├── Functions/               # HTTP and blob trigger endpoints
     │   ├── UploadFunction.cs
     │   ├── ProcessingFunction.cs
-    │   └── QueryFunction.cs
+    │   ├── QueryFunction.cs
+    │   ├── ListDocumentsFunction.cs
+    │   └── StatusFunction.cs
     ├── Services/                # Core business logic
     │   ├── DocumentIngestionService.cs
     │   ├── SearchService.cs
@@ -148,7 +129,8 @@ DocumentQA.sln
     │   └── DocumentStatusService.cs
     ├── Configuration/           # Configuration POCOs
     ├── Models/                  # Data transfer objects
-    └── Utils/                   # Helper utilities
+    ├── Utils/                   # Helper utilities
+    └── local.settings.json      # Local configuration (gitignored)
 ```
 
 ## Configuration
@@ -239,14 +221,14 @@ Build specific project:
 dotnet build DocumentQA.Functions/DocumentQA.Functions.csproj
 ```
 
-### Running Functions Standalone
+### Running Locally
 
 ```bash
 cd DocumentQA.Functions
 func start
 ```
 
-Note: Requires manual configuration of 30+ environment variables in `local.settings.json`. Using Aspire is recommended.
+Ensure `local.settings.json` is configured with all required Azure service credentials (see `local.settings.json.template`).
 
 ### Adding a New Service
 
@@ -272,10 +254,14 @@ Note: Requires manual configuration of 30+ environment variables in `local.setti
 
 ### View Processing Status
 
-Check the Aspire Dashboard for:
-- Real-time traces and logs
-- Function execution metrics
-- Resource health
+Check function logs and status:
+- **Local**: View real-time logs in the terminal where `func start` is running
+- **Azure**: Use Azure Portal → Function App → Log stream or Application Insights
+
+To check document processing status:
+```bash
+curl http://localhost:7071/api/status/{document-id}
+```
 
 ### Common Issues
 
@@ -341,8 +327,6 @@ You can also deploy using Azure Functions Core Tools:
 cd DocumentQA.Functions
 func azure functionapp publish <function-app-name>
 ```
-
-**Important**: Do not deploy the Aspire AppHost project. It is for local development only.
 
 For manual production deployment:
 1. Create Azure resources (Storage Account, Document Intelligence, AI Search, etc.)
@@ -415,7 +399,7 @@ SOFTWARE.
 
 ## Acknowledgments
 
-- Built with [.NET Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/)
+- Built with [Azure Functions](https://azure.microsoft.com/en-us/products/functions/)
 - Powered by [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 - Uses [Azure Document Intelligence](https://azure.microsoft.com/en-us/products/ai-services/ai-document-intelligence)
 - Vector search by [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search)
@@ -424,7 +408,7 @@ SOFTWARE.
 
 For detailed development guidance, see:
 - `CLAUDE.md` - Comprehensive development guide
-- `DocumentQA.AppHost/README.md` - Aspire setup instructions
-- `docs/ASPIRE_SETUP.md` - Integration guide
+- `infra/README.md` - Infrastructure deployment guide
+- `docs/DEPLOYMENT_QUICKSTART.md` - Quick deployment guide
 
 For issues and questions, please open an issue in the repository.

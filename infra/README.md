@@ -23,7 +23,7 @@ The infrastructure provisions the following Azure resources:
 2. **Azure Developer CLI** (`azd`) installed - [Installation Guide](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
 3. **.NET 10 SDK** installed
 4. **Existing Azure OpenAI Resource** with deployed models
-5. **Docker Desktop** (optional, for local Aspire development)
+5. **Docker Desktop** (optional, for local local development)
 
 ## Environment Setup
 

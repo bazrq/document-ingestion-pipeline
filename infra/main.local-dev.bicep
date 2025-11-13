@@ -139,14 +139,14 @@ LOCAL ASPIRE DEVELOPMENT SETUP - NEXT STEPS
      }
    }
 
-2. Start the Aspire stack:
+2. Start the Azure Functions Core Tools stack:
    cd DocumentQA.AppHost
    dotnet run
 
-3. Aspire will automatically:
+3. Azure Functions Core Tools will automatically:
    - Inject all configuration into Azure Functions
    - Initialize the blob container and table storage
-   - Open the Aspire Dashboard
+   - Open the Azure Functions Core Tools Dashboard
 
 ===========================================
 COST ESTIMATE (Monthly)

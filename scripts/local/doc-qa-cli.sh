@@ -4,10 +4,10 @@
 # Document QA System - Interactive CLI
 ################################################################################
 # This script provides an interactive menu-driven interface to interact with
-# the Azure Functions API running locally via Aspire.
+# the Azure Functions API running locally via Azure Functions.
 #
 # Prerequisites:
-#   - Aspire must be running (cd DocumentQA.AppHost && dotnet run)
+#   - Azure Functions must be running (cd DocumentQA.AppHost && dotnet run)
 #   - Functions API must be accessible at http://localhost:7071
 #   - curl and jq must be installed
 #
@@ -61,7 +61,7 @@ check_health() {
     else
         echo "✗ API is not reachable at $API_URL"
         echo ""
-        echo "Please ensure Aspire is running:"
+        echo "Please ensure Azure Functions is running:"
         echo "  cd DocumentQA.AppHost && dotnet run"
         echo ""
         return 1
@@ -386,7 +386,7 @@ manual_health_check() {
     else
         echo "✗ API is not reachable at $API_URL"
         echo ""
-        echo "Please ensure Aspire is running:"
+        echo "Please ensure Azure Functions is running:"
         echo "  cd DocumentQA.AppHost && dotnet run"
     fi
 

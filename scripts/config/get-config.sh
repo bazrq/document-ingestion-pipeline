@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Retrieve configuration from deployed local-dev infrastructure
-# Usage: ./get-config.sh [resource-group-name] [--update-functions] [--update-aspire]
+# Usage: ./get-config.sh [resource-group-name] [--update-functions] [--update-functions]
 # Default: When called with no arguments, automatically updates appsettings.Development.json
 
 set -e
@@ -11,7 +11,7 @@ RESOURCE_GROUP="rg-local-dev"
 UPDATE_FUNCTIONS=false
 UPDATE_ASPIRE=false
 
-# If no arguments provided, update Aspire appsettings by default
+# If no arguments provided, update Azure Functions appsettings by default
 if [ $# -eq 0 ]; then
   UPDATE_ASPIRE=true
 fi
@@ -21,16 +21,16 @@ for arg in "$@"; do
     --update-functions)
       UPDATE_FUNCTIONS=true
       ;;
-    --update-aspire)
+    --update-functions)
       UPDATE_ASPIRE=true
       ;;
     --help|-h)
-      echo "Usage: $0 [resource-group-name] [--update-functions] [--update-aspire]"
+      echo "Usage: $0 [resource-group-name] [--update-functions] [--update-functions]"
       echo ""
       echo "Options:"
       echo "  resource-group-name    Azure resource group name (default: rg-local-dev)"
       echo "  --update-functions     Update DocumentQA.Functions/local.settings.json"
-      echo "  --update-aspire        Update DocumentQA.AppHost/appsettings.Development.json"
+      echo "  --update-functions        Update DocumentQA.AppHost/appsettings.Development.json"
       echo "  --help, -h             Show this help message"
       echo ""
       echo "Default Behavior:"
@@ -40,7 +40,7 @@ for arg in "$@"; do
       echo "  $0                                    # Update appsettings.Development.json from rg-local-dev"
       echo "  $0 rg-my-resources                    # Show config from rg-my-resources (no update)"
       echo "  $0 --update-functions                 # Update local.settings.json only"
-      echo "  $0 --update-aspire                    # Update appsettings.Development.json only"
+      echo "  $0 --update-functions                    # Update appsettings.Development.json only"
       echo "  $0 rg-local-dev --update-functions    # Show and update local.settings.json from specific RG"
       exit 0
       ;;
