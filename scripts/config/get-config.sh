@@ -1,19 +1,18 @@
 #!/bin/bash
 
 # Retrieve configuration from deployed local-dev infrastructure
-# Usage: ./get-config.sh [resource-group-name] [--update-functions] [--update-functions]
-# Default: When called with no arguments, automatically updates appsettings.Development.json
+# Usage: ./get-config.sh [resource-group-name]
+# Default: When called with no arguments, automatically updates local.settings.json
 
 set -e
 
 # Parse arguments
 RESOURCE_GROUP="rg-local-dev"
 UPDATE_FUNCTIONS=false
-UPDATE_ASPIRE=false
 
-# If no arguments provided, update Azure Functions appsettings by default
+# If no arguments provided, update Azure Functions local.settings.json by default
 if [ $# -eq 0 ]; then
-  UPDATE_ASPIRE=true
+  UPDATE_FUNCTIONS=true
 fi
 
 for arg in "$@"; do
@@ -21,27 +20,22 @@ for arg in "$@"; do
     --update-functions)
       UPDATE_FUNCTIONS=true
       ;;
-    --update-functions)
-      UPDATE_ASPIRE=true
-      ;;
     --help|-h)
-      echo "Usage: $0 [resource-group-name] [--update-functions] [--update-functions]"
+      echo "Usage: $0 [resource-group-name] [--update-functions]"
       echo ""
       echo "Options:"
       echo "  resource-group-name    Azure resource group name (default: rg-local-dev)"
       echo "  --update-functions     Update DocumentQA.Functions/local.settings.json"
-      echo "  --update-functions        Update DocumentQA.AppHost/appsettings.Development.json"
       echo "  --help, -h             Show this help message"
       echo ""
       echo "Default Behavior:"
-      echo "  When called with no arguments, automatically updates appsettings.Development.json"
+      echo "  When called with no arguments, automatically updates local.settings.json from rg-local-dev"
       echo ""
       echo "Examples:"
-      echo "  $0                                    # Update appsettings.Development.json from rg-local-dev"
-      echo "  $0 rg-my-resources                    # Show config from rg-my-resources (no update)"
-      echo "  $0 --update-functions                 # Update local.settings.json only"
-      echo "  $0 --update-functions                    # Update appsettings.Development.json only"
-      echo "  $0 rg-local-dev --update-functions    # Show and update local.settings.json from specific RG"
+      echo "  $0                                    # Update local.settings.json from rg-local-dev"
+      echo "  $0 rg-my-resources                    # Update local.settings.json from rg-my-resources"
+      echo "  $0 --update-functions                 # Update local.settings.json from rg-local-dev"
+      echo "  $0 rg-local-dev --update-functions    # Update local.settings.json from specific RG"
       exit 0
       ;;
     *)
@@ -126,41 +120,6 @@ echo "  Account Name: $STORAGE_NAME"
 echo "  Connection String: ${STORAGE_CONNECTION:0:50}..."
 echo "  Container Name: $STORAGE_CONTAINER"
 echo "  Table Name: $STORAGE_TABLE"
-echo ""
-echo "=================================================="
-echo "APPSETTINGS.DEVELOPMENT.JSON FORMAT"
-echo "=================================================="
-echo ""
-cat <<EOF
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "Azure": {
-    "OpenAI": {
-      "Endpoint": "https://YOUR-OPENAI-RESOURCE.openai.azure.com/",
-      "ApiKey": "YOUR-OPENAI-KEY",
-      "EmbeddingDeploymentName": "text-embedding-3-large",
-      "ChatDeploymentName": "gpt-5-mini"
-    },
-    "DocumentIntelligence": {
-      "Endpoint": "$DOC_INTEL_ENDPOINT",
-      "ApiKey": "$DOC_INTEL_KEY"
-    },
-    "AISearch": {
-      "Endpoint": "$SEARCH_ENDPOINT",
-      "AdminKey": "$SEARCH_KEY",
-      "IndexName": "$SEARCH_INDEX"
-    },
-    "Storage": {
-      "ConnectionString": "$STORAGE_CONNECTION"
-    }
-  }
-}
-EOF
 echo ""
 echo "=================================================="
 echo "EXPORT AS ENVIRONMENT VARIABLES"
@@ -291,91 +250,6 @@ EOF
     echo "   - Azure__OpenAI__ApiKey"
     echo "   - Azure__OpenAI__EmbeddingDeploymentName (if different)"
     echo "   - Azure__OpenAI__ChatDeploymentName (if different)"
-    echo ""
-  fi
-fi
-
-# Update appsettings.Development.json if requested
-if [ "$UPDATE_ASPIRE" = true ]; then
-  echo "=================================================="
-  echo "UPDATING APPSETTINGS.DEVELOPMENT.JSON"
-  echo "=================================================="
-  echo ""
-
-  # Get script directory and project root
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-  APPHOST_DIR="$PROJECT_ROOT/DocumentQA.AppHost"
-  APPSETTINGS="$APPHOST_DIR/appsettings.Development.json"
-
-  # Check if jq is available
-  if ! command -v jq &> /dev/null; then
-    echo "Warning: jq not found. Installing is recommended for JSON manipulation."
-    echo "On macOS: brew install jq"
-    echo ""
-    echo "Creating appsettings.Development.json without jq..."
-  fi
-
-  # Read existing OpenAI configuration if file exists
-  EXISTING_OPENAI_ENDPOINT=""
-  EXISTING_OPENAI_KEY=""
-  EXISTING_OPENAI_EMBEDDING=""
-  EXISTING_OPENAI_CHAT=""
-
-  if [ -f "$APPSETTINGS" ] && command -v jq &> /dev/null; then
-    EXISTING_OPENAI_ENDPOINT=$(jq -r '.Azure.OpenAI.Endpoint // ""' "$APPSETTINGS")
-    EXISTING_OPENAI_KEY=$(jq -r '.Azure.OpenAI.ApiKey // ""' "$APPSETTINGS")
-    EXISTING_OPENAI_EMBEDDING=$(jq -r '.Azure.OpenAI.EmbeddingDeploymentName // ""' "$APPSETTINGS")
-    EXISTING_OPENAI_CHAT=$(jq -r '.Azure.OpenAI.ChatDeploymentName // ""' "$APPSETTINGS")
-  fi
-
-  # Use existing OpenAI values or defaults
-  OPENAI_ENDPOINT="${EXISTING_OPENAI_ENDPOINT:-https://YOUR-OPENAI-RESOURCE.openai.azure.com/}"
-  OPENAI_KEY="${EXISTING_OPENAI_KEY:-YOUR-OPENAI-KEY}"
-  OPENAI_EMBEDDING="${EXISTING_OPENAI_EMBEDDING:-text-embedding-3-large}"
-  OPENAI_CHAT="${EXISTING_OPENAI_CHAT:-gpt-5-mini}"
-
-  # Create or update appsettings.Development.json
-  cat > "$APPSETTINGS" <<EOF
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "Azure": {
-    "OpenAI": {
-      "Endpoint": "$OPENAI_ENDPOINT",
-      "ApiKey": "$OPENAI_KEY",
-      "EmbeddingDeploymentName": "$OPENAI_EMBEDDING",
-      "ChatDeploymentName": "$OPENAI_CHAT"
-    },
-    "DocumentIntelligence": {
-      "Endpoint": "$DOC_INTEL_ENDPOINT",
-      "ApiKey": "$DOC_INTEL_KEY"
-    },
-    "AISearch": {
-      "Endpoint": "$SEARCH_ENDPOINT",
-      "AdminKey": "$SEARCH_KEY",
-      "IndexName": "$SEARCH_INDEX"
-    },
-    "Storage": {
-      "ConnectionString": "$STORAGE_CONNECTION"
-    }
-  }
-}
-EOF
-
-  echo "✅ Updated: $APPSETTINGS"
-  echo ""
-  if [ "$OPENAI_ENDPOINT" = "https://YOUR-OPENAI-RESOURCE.openai.azure.com/" ]; then
-    echo "⚠️  NOTE: Azure OpenAI configuration still needs to be set manually."
-    echo "   Update the following values in $APPSETTINGS:"
-    echo "   - Azure.OpenAI.Endpoint"
-    echo "   - Azure.OpenAI.ApiKey"
-    echo "   - Azure.OpenAI.EmbeddingDeploymentName (if different)"
-    echo "   - Azure.OpenAI.ChatDeploymentName (if different)"
     echo ""
   fi
 fi
