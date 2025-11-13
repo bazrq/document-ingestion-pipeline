@@ -2,6 +2,7 @@
 
 # Retrieve configuration from deployed local-dev infrastructure
 # Usage: ./get-config.sh [resource-group-name] [--update-functions] [--update-aspire]
+# Default: When called with no arguments, automatically updates appsettings.Development.json
 
 set -e
 
@@ -9,6 +10,11 @@ set -e
 RESOURCE_GROUP="rg-local-dev"
 UPDATE_FUNCTIONS=false
 UPDATE_ASPIRE=false
+
+# If no arguments provided, update Aspire appsettings by default
+if [ $# -eq 0 ]; then
+  UPDATE_ASPIRE=true
+fi
 
 for arg in "$@"; do
   case $arg in
@@ -27,11 +33,15 @@ for arg in "$@"; do
       echo "  --update-aspire        Update DocumentQA.AppHost/appsettings.Development.json"
       echo "  --help, -h             Show this help message"
       echo ""
+      echo "Default Behavior:"
+      echo "  When called with no arguments, automatically updates appsettings.Development.json"
+      echo ""
       echo "Examples:"
-      echo "  $0                                    # Show config from rg-local-dev"
-      echo "  $0 rg-my-resources                    # Show config from rg-my-resources"
-      echo "  $0 --update-functions                 # Show and update local.settings.json"
-      echo "  $0 rg-local-dev --update-functions    # Show and update from specific RG"
+      echo "  $0                                    # Update appsettings.Development.json from rg-local-dev"
+      echo "  $0 rg-my-resources                    # Show config from rg-my-resources (no update)"
+      echo "  $0 --update-functions                 # Update local.settings.json only"
+      echo "  $0 --update-aspire                    # Update appsettings.Development.json only"
+      echo "  $0 rg-local-dev --update-functions    # Show and update local.settings.json from specific RG"
       exit 0
       ;;
     *)
