@@ -87,6 +87,7 @@ builder.Services.AddSingleton<AnswerGenerationService>();
 builder.Services.AddSingleton<QueryService>();
 builder.Services.AddSingleton<DocumentStatusService>();
 builder.Services.AddSingleton<DocumentIngestionService>();
+builder.Services.AddSingleton<DocumentDeletionService>();
 
 // Configure CORS for local development
 builder.Services.AddCors(options =>
@@ -117,7 +118,17 @@ using (var scope = host.Services.CreateScope())
     await tableClient.CreateIfNotExistsAsync();
 
     var searchService = scope.ServiceProvider.GetRequiredService<SearchService>();
-    await searchService.CreateIndexIfNotExistsAsync();
+
+    // RECREATE INDEX: Delete and recreate to fix vector field configuration
+    Console.WriteLine("=== RECREATING INDEX TO FIX VECTOR FIELD ===");
+    await searchService.RecreateIndexAsync();
+    Console.WriteLine("=== INDEX RECREATION COMPLETE ===");
+
+    // DIAGNOSTIC: Print index schema to verify vector field is properly configured
+    Console.WriteLine("\n=== DIAGNOSTIC: Azure AI Search Index Schema ===");
+    var indexSchema = await searchService.GetIndexSchemaAsync();
+    Console.WriteLine(indexSchema);
+    Console.WriteLine("=== END DIAGNOSTIC ===");
 }
 
 await host.RunAsync();

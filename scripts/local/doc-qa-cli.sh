@@ -374,6 +374,98 @@ query_documents() {
     pause
 }
 
+# Delete a document
+delete_document() {
+    separator
+    echo "Delete Document"
+    separator
+    echo ""
+
+    # Prompt for document ID
+    local default_id=""
+    if [ -n "$LAST_DOCUMENT_ID" ]; then
+        default_id=" (press Enter for: $LAST_DOCUMENT_ID)"
+    fi
+
+    read -p "Enter document ID to delete$default_id: " doc_id
+
+    # Use last document ID if user pressed Enter
+    if [ -z "$doc_id" ] && [ -n "$LAST_DOCUMENT_ID" ]; then
+        doc_id="$LAST_DOCUMENT_ID"
+        echo "Using: $doc_id"
+    fi
+
+    if [ -z "$doc_id" ]; then
+        echo "✗ Error: Document ID is required"
+        pause
+        return 1
+    fi
+
+    echo ""
+
+    # Confirmation prompt
+    echo "⚠️  WARNING: This will permanently delete:"
+    echo "  - The PDF file from Blob Storage"
+    echo "  - All indexed chunks from AI Search"
+    echo "  - The status record from Table Storage"
+    echo ""
+    read -p "Are you sure you want to delete document '$doc_id'? (yes/no): " confirm
+
+    if [ "$confirm" != "yes" ]; then
+        echo "Deletion cancelled."
+        pause
+        return 0
+    fi
+
+    echo ""
+
+    # Make delete request
+    echo "Deleting document..."
+    echo ""
+
+    local response
+    local http_code
+    http_code=$(curl -s -w "%{http_code}" -o /tmp/delete_response.json --connect-timeout 5 --max-time 30 -X DELETE "$API_URL/api/documents/$doc_id" 2>&1)
+
+    if [ "$http_code" = "204" ]; then
+        echo "✓ Success: Document deleted successfully from all storage locations"
+        echo ""
+
+        # Clear the last document ID if it was the one we just deleted
+        if [ "$doc_id" = "$LAST_DOCUMENT_ID" ]; then
+            LAST_DOCUMENT_ID=""
+        fi
+    elif [ "$http_code" = "200" ]; then
+        echo "⚠️  Partial Success: Document was partially deleted"
+        echo ""
+        echo "Response:"
+        cat /tmp/delete_response.json | jq '.'
+    elif [ "$http_code" = "404" ]; then
+        echo "✗ Error: Document not found"
+        echo ""
+        echo "Response:"
+        cat /tmp/delete_response.json | jq '.'
+    elif [ "$http_code" = "400" ]; then
+        echo "✗ Error: Bad request (invalid document ID format)"
+        echo ""
+        echo "Response:"
+        cat /tmp/delete_response.json | jq '.'
+    else
+        echo "✗ Error: Failed to delete document (HTTP $http_code)"
+        echo ""
+        if [ -f /tmp/delete_response.json ]; then
+            echo "Response:"
+            cat /tmp/delete_response.json | jq '.' 2>/dev/null || cat /tmp/delete_response.json
+        fi
+    fi
+
+    # Clean up temp file
+    rm -f /tmp/delete_response.json
+
+    echo ""
+    pause
+}
+
 # Manual health check from menu
 manual_health_check() {
     separator
@@ -407,8 +499,9 @@ show_menu() {
     echo "2. Check Document Status"
     echo "3. List All Documents"
     echo "4. Query Documents (Ask Question)"
-    echo "5. Check API Health"
-    echo "6. Exit"
+    echo "5. Delete Document"
+    echo "6. Check API Health"
+    echo "7. Exit"
     separator
     echo ""
 }
@@ -425,7 +518,7 @@ main() {
     # Main loop
     while true; do
         show_menu
-        read -p "Enter your choice (1-6): " choice
+        read -p "Enter your choice (1-7): " choice
         echo ""
 
         case $choice in
@@ -442,14 +535,17 @@ main() {
                 query_documents
                 ;;
             5)
-                manual_health_check
+                delete_document
                 ;;
             6)
+                manual_health_check
+                ;;
+            7)
                 echo "Exiting. Goodbye!"
                 exit 0
                 ;;
             *)
-                echo "Invalid choice. Please enter a number between 1 and 6."
+                echo "Invalid choice. Please enter a number between 1 and 7."
                 pause
                 ;;
         esac

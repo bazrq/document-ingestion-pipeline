@@ -151,4 +151,22 @@ public class DocumentStatusService
         // Sort by upload time descending (most recent first)
         return documents.OrderByDescending(d => d.UploadedAt).ToList();
     }
+
+    /// <summary>
+    /// Deletes a document status record from Table Storage
+    /// </summary>
+    /// <returns>True if the entity was deleted, false if it didn't exist</returns>
+    public async Task<bool> DeleteStatusAsync(string documentId)
+    {
+        try
+        {
+            await _tableClient.DeleteEntityAsync("documents", documentId);
+            return true;
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            // Entity doesn't exist, which is fine for deletion
+            return false;
+        }
+    }
 }

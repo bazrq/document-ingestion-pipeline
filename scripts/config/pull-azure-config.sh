@@ -9,14 +9,11 @@
 #
 # Options:
 #   --help, -h              Show this help message
-#   --openai-only           Only configure Azure OpenAI (default behavior for now)
-#   --no-backup             Skip creating backup of existing config files
-#   --output FILE           Specify custom output file path
+#   --no-backup             Skip creating backup of existing config file
 #
 # Examples:
 #   ./pull-azure-config.sh
 #   ./pull-azure-config.sh --no-backup
-#   ./pull-azure-config.sh --output /path/to/custom-config.json
 
 set -euo pipefail
 
@@ -26,10 +23,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Default configuration
 CREATE_BACKUP=true
-OPENAI_ONLY=true
-UPDATE_FUNCTIONS=false
-OUTPUT_FILE="${REPO_ROOT}/DocumentQA.AppHost/appsettings.Development.json"
-FUNCTIONS_FILE="${REPO_ROOT}/DocumentQA.Functions/local.settings.json"
+CONFIG_FILE="${REPO_ROOT}/DocumentQA.Functions/local.settings.json"
 
 # Source library modules
 # shellcheck source=./lib/validation.sh
@@ -46,33 +40,23 @@ show_help() {
     cat << EOF
 pull-azure-config.sh - Pull Azure infrastructure configuration
 
-This script discovers your Azure resources and updates local configuration
-files for the Document QA system. It provides an interactive interface for
-selecting Azure OpenAI models and other required services.
+This script discovers your Azure OpenAI resources and updates the
+DocumentQA.Functions/local.settings.json configuration file. It provides
+an interactive interface for selecting Azure OpenAI deployments.
 
 USAGE:
     ./pull-azure-config.sh [OPTIONS]
 
 OPTIONS:
     -h, --help              Show this help message
-    --openai-only           Only configure Azure OpenAI (default)
-    --update-functions      Also update DocumentQA.Functions/local.settings.json
     --no-backup             Skip creating backup of existing config
-    --output FILE           Specify output file path
-                            (default: DocumentQA.AppHost/appsettings.Development.json)
 
 EXAMPLES:
-    # Interactive configuration with defaults (Azure Functions only)
+    # Interactive configuration (default)
     ./pull-azure-config.sh
-
-    # Update both Azure Functions and Functions configuration
-    ./pull-azure-config.sh --update-functions
 
     # Configure without creating backup
     ./pull-azure-config.sh --no-backup
-
-    # Output to custom file
-    ./pull-azure-config.sh --output /path/to/config.json
 
 PREREQUISITES:
     - Azure CLI (az) installed and authenticated
@@ -98,25 +82,9 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
-            --openai-only)
-                OPENAI_ONLY=true
-                shift
-                ;;
-            --update-functions)
-                UPDATE_FUNCTIONS=true
-                shift
-                ;;
             --no-backup)
                 CREATE_BACKUP=false
                 shift
-                ;;
-            --output)
-                if [ -z "${2:-}" ]; then
-                    print_error "Missing value for --output"
-                    exit 1
-                fi
-                OUTPUT_FILE="$2"
-                shift 2
                 ;;
             *)
                 print_error "Unknown option: $1"
@@ -138,28 +106,20 @@ initialize_config_file() {
             local default_config
             default_config=$(cat << 'EOF'
 {
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "Azure": {
-    "OpenAI": {
-      "Endpoint": "",
-      "ApiKey": "",
-      "EmbeddingDeploymentName": "",
-      "ChatDeploymentName": ""
-    },
-    "DocumentIntelligence": {
-      "Endpoint": "",
-      "ApiKey": ""
-    },
-    "AISearch": {
-      "Endpoint": "",
-      "AdminKey": "",
-      "IndexName": "document-chunks"
-    }
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "Azure__OpenAI__Endpoint": "",
+    "Azure__OpenAI__ApiKey": "",
+    "Azure__OpenAI__EmbeddingDeploymentName": "",
+    "Azure__OpenAI__ChatDeploymentName": "",
+    "Azure__DocumentIntelligence__Endpoint": "",
+    "Azure__DocumentIntelligence__ApiKey": "",
+    "Azure__AISearch__Endpoint": "",
+    "Azure__AISearch__AdminKey": "",
+    "Azure__AISearch__IndexName": "document-chunks",
+    "Azure__Storage__ConnectionString": "UseDevelopmentStorage=true"
   }
 }
 EOF
@@ -182,8 +142,6 @@ EOF
 
 # Configure Azure OpenAI
 configure_azure_openai() {
-    local output_file="$1"
-
     print_header "Azure OpenAI Configuration"
 
     # Get OpenAI configuration through interactive workflow
@@ -198,7 +156,7 @@ configure_azure_openai() {
 
     # Confirm before applying
     echo ""
-    if ! confirm "Apply this configuration to $output_file?" "y"; then
+    if ! confirm "Apply this configuration to $CONFIG_FILE?" "y"; then
         print_warning "Configuration cancelled by user"
         return 1
     fi
@@ -206,7 +164,7 @@ configure_azure_openai() {
     # Create backup if requested
     if [ "$CREATE_BACKUP" = true ]; then
         print_section "Creating Backup"
-        if ! create_backup "$output_file"; then
+        if ! create_backup "$CONFIG_FILE"; then
             if ! confirm "Backup failed. Continue anyway?" "n"; then
                 return 1
             fi
@@ -225,33 +183,12 @@ configure_azure_openai() {
     local embedding_deployment
     embedding_deployment=$(echo "$openai_config" | jq -r '.embeddingDeployment')
 
-    # Update Azure Functions appsettings.Development.json
-    if update_appsettings_openai "$output_file" "$endpoint" "$api_key" "$embedding_deployment" "$chat_deployment"; then
-        print_success "Updated Azure Functions configuration: $output_file"
+    # Update Functions local.settings.json
+    if update_local_settings_openai "$CONFIG_FILE" "$endpoint" "$api_key" "$embedding_deployment" "$chat_deployment"; then
+        print_success "Updated Azure Functions configuration: $CONFIG_FILE"
     else
-        print_error "Failed to apply configuration to $output_file"
+        print_error "Failed to apply configuration to $CONFIG_FILE"
         return 1
-    fi
-
-    # Also update Functions local.settings.json if requested
-    if [ "$UPDATE_FUNCTIONS" = true ]; then
-        echo ""
-        print_info "Also updating Functions configuration..."
-
-        # Create backup of local.settings.json if requested
-        if [ "$CREATE_BACKUP" = true ]; then
-            if ! create_backup "$FUNCTIONS_FILE"; then
-                if ! confirm "Backup of $FUNCTIONS_FILE failed. Continue anyway?" "n"; then
-                    return 1
-                fi
-            fi
-        fi
-
-        if update_local_settings_openai "$FUNCTIONS_FILE" "$endpoint" "$api_key" "$embedding_deployment" "$chat_deployment"; then
-            print_success "Updated Functions configuration: $FUNCTIONS_FILE"
-        else
-            print_warning "Failed to update Functions configuration (Azure Functions config was still updated)"
-        fi
     fi
 
     echo ""
@@ -266,28 +203,16 @@ show_next_steps() {
     echo "Your configuration has been updated. Here's what to do next:"
     echo ""
     echo "1. Review the configuration:"
-    echo "   ${COLOR_BLUE}cat $OUTPUT_FILE${COLOR_RESET}"
-    if [ "$UPDATE_FUNCTIONS" = true ]; then
-        echo "   ${COLOR_BLUE}cat $FUNCTIONS_FILE${COLOR_RESET}"
-    fi
+    echo "   ${COLOR_BLUE}cat $CONFIG_FILE${COLOR_RESET}"
     echo ""
-
-    if [ "$UPDATE_FUNCTIONS" = true ]; then
-        echo "2. Start the application:"
-        echo "   With Azure Functions: ${COLOR_BLUE}cd DocumentQA.AppHost && dotnet run${COLOR_RESET}"
-        echo "   Or standalone Functions: ${COLOR_BLUE}cd DocumentQA.Functions && func start${COLOR_RESET}"
-    else
-        echo "2. Start the application with Azure Functions:"
-        echo "   ${COLOR_BLUE}cd DocumentQA.AppHost && dotnet run${COLOR_RESET}"
-    fi
+    echo "2. Start Azure Functions:"
+    echo "   ${COLOR_BLUE}cd DocumentQA.Functions && func start${COLOR_RESET}"
     echo ""
-    echo "3. Access the Functions console when prompted (if using Azure Functions)"
-    echo ""
-    echo "4. Test the APIs:"
+    echo "3. Test the APIs:"
     echo "   Upload:  ${COLOR_BLUE}POST http://localhost:7071/api/upload${COLOR_RESET}"
     echo "   Query:   ${COLOR_BLUE}POST http://localhost:7071/api/query${COLOR_RESET}"
     echo ""
-    print_info "For troubleshooting, see docs/ASPIRE_SETUP.md"
+    print_info "For troubleshooting, see CLAUDE.md"
     echo ""
 }
 
@@ -320,21 +245,21 @@ main() {
     fi
 
     # Initialize config file if needed
-    if ! initialize_config_file "$OUTPUT_FILE"; then
+    if ! initialize_config_file "$CONFIG_FILE"; then
         exit 1
     fi
 
     # Validate config file
-    if ! check_file_writable "$OUTPUT_FILE"; then
+    if ! check_file_writable "$CONFIG_FILE"; then
         exit 1
     fi
 
-    if ! validate_json_file "$OUTPUT_FILE"; then
+    if ! validate_json_file "$CONFIG_FILE"; then
         exit 1
     fi
 
     # Configure Azure OpenAI
-    if ! configure_azure_openai "$OUTPUT_FILE"; then
+    if ! configure_azure_openai; then
         print_error "Configuration failed"
         exit 1
     fi
